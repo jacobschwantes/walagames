@@ -207,28 +207,28 @@ export const LobbyEntrance: React.FC<LobbyEntranceProps> = ({ user }) => {
   const handleCreateLobby = async (
     data: z.infer<typeof CreateLobbyFormSchema>
   ) => {
-    const { otc } = await fetch("http://localhost:3000/api/auth/otc")
+    const { ott } = await fetch("http://localhost:3000/api/auth/ott")
       .then((res) => res.json())
       .catch((e) => {
         toast.error("Failed to create lobby. Please try again.");
       });
-    setConnectionStr(`ws://localhost:8080/ws?otc=${otc}`);
+    setConnectionStr(`ws://localhost:8080/websocket?token=${ott}`);
     setLobbyOpen(true);
   };
 
   const handleJoinLobby = async (data: z.infer<typeof JoinLobbyFormSchema>) => {
     if (user) {
-      const { otc } = await fetch("http://localhost:3000/api/auth/otc")
+      const { otc } = await fetch("http://localhost:3000/api/auth/ott")
         .then((res) => res.json())
         .catch((e) => {
           toast.error("Failed to create lobby. Please try again.");
         });
       setConnectionStr(
-        `ws://localhost:8080/ws?otc=${otc}&lobby=${data.lobbyCode}`
+        `ws://localhost:8080/websocket?token=${otc}&lobby=${data.lobbyCode}`
       );
     } else {
       setConnectionStr(
-        `ws://localhost:8080/ws?lobby=${data.lobbyCode}&username=${data.username}`
+        `ws://localhost:8080/websocket?lobby=${data.lobbyCode}&username=${data.username}`
       );
       setUsername(data.username);
     }

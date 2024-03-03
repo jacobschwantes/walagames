@@ -69,14 +69,14 @@ func (repo *userRepository) GetUserBySessionToken(token string) (*models.User, e
 }
 
 func (repo *userRepository) CreateTemporaryAuthToken(ctx context.Context, id string) (string, error) {
-	otc, err := util.GenerateToken(8)
+	token, err := util.GenerateToken(8)
 	if err != nil {
 		log.Fatal(err)
 		return "", err
 	}
-	key := fmt.Sprintf("otc:%s", otc)
+	key := fmt.Sprintf("ott:%s", token)
 	err = repo.rdb.Set(ctx, key, id, OTC_TTL).Err()
-	return otc, err
+	return token, err
 }
 
 func (repo *userRepository) ConsumeTemporaryAuthToken(ctx context.Context, token string) (string, error) {
