@@ -13,6 +13,12 @@ type Message struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
+// TODO: store a players slice in the game state
+// record answers and scores inthe player struct
+// this should be separate from list of clients
+// i want a user to be able to disconnect and then join back and resume
+// where they left off. we will store a table of lobbies they are in without a timer
+// to join back using redis
 
 type Game struct {
 	Lobby        *Lobby
