@@ -184,8 +184,7 @@ func (l *Lobby) MigrateHost(lobbyRepo LobbyRepository) {
 	}
 
 	// close lobby if no host found
-	lobbyRepo.CloseLobby(l.Code, "No host found, lobby closed")
-	fmt.Println(fmt.Sprintf("No host found so lobby %s was closed", l.Code))
+	lobbyRepo.CloseLobby(l.Code, "No host found, lobby closing")
 }
 
 func (l *Lobby) GetPlayerList() []Player {

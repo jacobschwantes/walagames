@@ -2,9 +2,11 @@ package models
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
+	"fmt"
 	"log"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type Client struct {
@@ -129,6 +131,7 @@ func (c *Client) WritePump() {
 				return
 			}
 		case <-c.Close:
+			fmt.Println("close client", c.User.Username)
 			c.Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			return
 		case <-ticker.C:

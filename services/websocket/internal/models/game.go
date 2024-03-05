@@ -149,6 +149,7 @@ func (g *Game) StartGame() {
 				g.Lobby.BroadcastServerMessage("Host resumed the game")
 				fmt.Println("Host resumed the game")
 			case "END_GAME":
+				fmt.Println("Host ended the game")
 				ticker.Stop()
 				return
 			default:

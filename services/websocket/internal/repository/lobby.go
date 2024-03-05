@@ -45,14 +45,17 @@ func (repo *lobbyRepository) GetLobbyByCode(code string) (*models.Lobby, error) 
 }
 
 func (repo *lobbyRepository) CloseLobby(code string, message string) error {
-	if lobby, err := repo.GetLobbyByCode(code); err != nil {
+	if lobby, err := repo.GetLobbyByCode(code); err == nil {
 		for c := range lobby.Clients {
 			c.Close <- true
 		}
 		lobby.Game.Control <- "END_GAME"
 		delete(repo.lobbies, code)
 		return nil
+	} else {
+		log.Println("Error closing lobby:", err)
+		return fmt.Errorf("lobby not found")
 	}
 
-	return fmt.Errorf("lobby not found")
+	
 }

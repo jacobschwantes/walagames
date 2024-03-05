@@ -218,13 +218,13 @@ export const LobbyEntrance: React.FC<LobbyEntranceProps> = ({ user }) => {
 
   const handleJoinLobby = async (data: z.infer<typeof JoinLobbyFormSchema>) => {
     if (user) {
-      const { otc } = await fetch("http://localhost:3000/api/auth/ott")
+      const { ott } = await fetch("http://localhost:3000/api/auth/ott")
         .then((res) => res.json())
         .catch((e) => {
           toast.error("Failed to create lobby. Please try again.");
         });
       setConnectionStr(
-        `ws://localhost:8080/websocket?token=${otc}&lobby=${data.lobbyCode}`
+        `ws://localhost:8080/websocket?token=${ott}&lobby=${data.lobbyCode}`
       );
     } else {
       setConnectionStr(
