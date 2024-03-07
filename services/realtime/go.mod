@@ -1,4 +1,4 @@
-module github.com/jacobschwantes/quizblitz/services/websocket
+module github.com/jacobschwantes/quizblitz/services/realtime
 
 go 1.22
 

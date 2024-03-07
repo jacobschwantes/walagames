@@ -7,7 +7,7 @@ const Page: NextPage<PageProps> = async ({}) => {
     const session = await auth();
     const user = session?.user;
   return (
-    <main className="max-w-7xl mx-auto min-h-screen flex flex-col">
+    <main className=" ">
      
         <LobbyEntrance user={user} />
  

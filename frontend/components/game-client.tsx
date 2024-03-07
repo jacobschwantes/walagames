@@ -212,7 +212,7 @@ export const LobbyEntrance: React.FC<LobbyEntranceProps> = ({ user }) => {
       .catch((e) => {
         toast.error("Failed to create lobby. Please try again.");
       });
-    setConnectionStr(`ws://localhost:8080/websocket?token=${ott}`);
+    setConnectionStr(`ws://localhost:8080/host?token=${ott}`);
     setLobbyOpen(true);
   };
 
@@ -224,11 +224,11 @@ export const LobbyEntrance: React.FC<LobbyEntranceProps> = ({ user }) => {
           toast.error("Failed to create lobby. Please try again.");
         });
       setConnectionStr(
-        `ws://localhost:8080/websocket?token=${ott}&lobby=${data.lobbyCode}`
+        `ws://localhost:8080/join/${data.lobbyCode}?token=${ott}`
       );
     } else {
       setConnectionStr(
-        `ws://localhost:8080/websocket?lobby=${data.lobbyCode}&username=${data.username}`
+        `ws://localhost:8080/join/${data.lobbyCode}?username=${data.username}`
       );
       setUsername(data.username);
     }
@@ -237,7 +237,7 @@ export const LobbyEntrance: React.FC<LobbyEntranceProps> = ({ user }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1">
+    <div className="flex flex-col items-center justify-center flex-1 ">
       {lobbyOpen ? (
         <GameClient
           onClose={() => {

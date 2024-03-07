@@ -1,26 +1,26 @@
-package models
+package websocket
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
+	"github.com/jacobschwantes/quizblitz/services/realtime/internal/lobby"
+
+	"log"
+	"net/http"
+	"time"
 )
 
-type Client struct {
-	Lobby *Lobby // Change from hub to lobby
-	Conn  *websocket.Conn
-	Send  chan []byte
-	Close chan bool
-	User  *Player
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		allowedOrigin := "http://localhost:3000" // Adjust this to match your Next.js app's origin
+		return r.Header.Get("Origin") == allowedOrigin
+	},
 }
-
-// type ClientInterface interface {
-//     ReadPump()
-//     WritePump()
-// }
 
 const (
 	// Time allowed to write a message to the peer.
@@ -41,18 +41,8 @@ var (
 	space   = []byte{' '}
 )
 
-func constructMessage(c *Client, message string) *Event {
-	msg := &Message{
-		Username:  c.User.Username,
-		Message:   message,
-		Timestamp: time.Now().Unix(),
-	}
-	event := &Event{
-		Type:    "NEW_MESSAGE",
-		Payload: msg,
-	}
-
-	return event
+func UpgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+	return upgrader.Upgrade(w, r, nil)
 }
 
 // readPump pumps messages from the websocket connection to the lobby.
@@ -60,8 +50,9 @@ func constructMessage(c *Client, message string) *Event {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine
-func (c *Client) ReadPump() {
+func ReadPump(c *realtime.Client) {
 	defer func() {
+		fmt.Println("read pump closed for user:", c.PlayerInfo.Username)
 		c.Lobby.Unregister <- c
 		c.Conn.Close()
 	}()
@@ -77,14 +68,14 @@ func (c *Client) ReadPump() {
 			break
 		}
 
-		var event Event
+		var event realtime.Event
 
 		if err := json.Unmarshal(msgBytes, &event); err != nil {
 			log.Printf("Error un-marshalling message: %v", err)
 			return
 		}
 
-		HandlePlayerAction(c, event)
+		lobby.HandlePlayerAction(c, event)
 
 	}
 }
@@ -94,11 +85,12 @@ func (c *Client) ReadPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) WritePump() {
+func WritePump(c *realtime.Client) {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
 		c.Conn.Close()
+		fmt.Println("write pump closed for user:", c.PlayerInfo.Username)
 	}()
 	for {
 		select {
@@ -116,8 +108,7 @@ func (c *Client) WritePump() {
 			}
 			w.Write(message)
 
-			// TODO: reformat this to send multiple messages at once, switch to 
-			// an array of events
+			// TODO: reformat this to send multiple messages at once, switch to an array of events
 			// Can reduce latency by sending multiple events / messages at once
 
 			// Add queued messages to the current websocket message.
@@ -131,8 +122,6 @@ func (c *Client) WritePump() {
 				return
 			}
 		case <-c.Close:
-			fmt.Println("close client", c.User.Username)
-			c.Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			return
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
