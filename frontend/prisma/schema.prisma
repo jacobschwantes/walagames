@@ -58,3 +58,51 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model Set {
+  id            Int            @id @default(autoincrement())
+  ownerID       Int
+  collaborators Collaborator[]
+  name          String
+  description   String
+  imageURL      String
+  tags          SetTag[]
+  terms         Term[]
+}
+
+model Collaborator {
+  id         Int                   @id @default(autoincrement())
+  permission CollaboratorPermission
+  set        Set                   @relation(fields: [setId], references: [id])
+  setId      Int
+}
+
+enum CollaboratorPermission {
+  read
+  admin
+  owner
+  read_write
+}
+
+model SetTag {
+  id  Int    @id @default(autoincrement())
+  tag String
+  set Set    @relation(fields: [setId], references: [id])
+  setId Int
+}
+
+model Term {
+  id         Int      @id @default(autoincrement())
+  term       String
+  definition String
+  tags       TermTag[]
+  set        Set      @relation(fields: [setId], references: [id])
+  setId      Int
+}
+
+model TermTag {
+  id  Int    @id @default(autoincrement())
+  tag String
+  term Term  @relation(fields: [termId], references: [id])
+  termId Int
+}

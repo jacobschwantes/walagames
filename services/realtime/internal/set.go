@@ -1,14 +1,29 @@
 package realtime
 
 type Set struct {
-	ID          int
-	OwnerID     int
-	Name        string
-	Description string
-	ImageURL    string
-	Tags        []SetTag
-	Terms       []Term
+	ID            int
+	OwnerID       int
+	Collaborators []Collaborator
+	Name          string
+	Description   string
+	ImageURL      string
+	Tags          []SetTag
+	Terms         []Term
 }
+
+type Collaborator struct {
+	ID         int
+	Permission CollaboratorPermission
+}
+
+type CollaboratorPermission string
+
+const (
+	PermissionRead      CollaboratorPermission = "read"
+	PermissionAdmin     CollaboratorPermission = "admin"
+	PermissionOwner     CollaboratorPermission = "owner"
+	PermissionReadWrite CollaboratorPermission = "read_write"
+)
 
 type SetTag struct {
 	ID  int
@@ -28,5 +43,5 @@ type TermTag struct {
 }
 
 type SetRepository interface {
-	GetSetByID(id int) (*Set, error)
+	Set(id int) (*Set, error)
 }

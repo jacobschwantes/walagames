@@ -12,10 +12,11 @@ type Router struct {
 	lobbyService realtime.LobbyManager
 	userService  realtime.UserService
 	authService  realtime.AuthService
+	setRepo 	realtime.SetRepository
 }
 
-func NewRouter(lm realtime.LobbyManager, us realtime.UserService, as realtime.AuthService) *Router {
-	return &Router{lm, us, as}
+func NewRouter(lm realtime.LobbyManager, us realtime.UserService, as realtime.AuthService, sr realtime.SetRepository) *Router {
+	return &Router{lm, us, as, sr}
 }
 
 func (rtr *Router) ServeHTTP() {

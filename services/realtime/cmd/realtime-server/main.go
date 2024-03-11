@@ -19,12 +19,13 @@ func main() {
 	defer rdb.Close()
 
 	userRepo := postgres.NewUserRepository(db)
+	setRepo := postgres.NewSetRepository(db)
 	authRepo := redis.NewAuthRepository(rdb)
 
 	userService := user.NewService(userRepo)
 	authService := auth.NewService(authRepo)
 	lobbyManager := lobby.NewManager()
 
-	router := http.NewRouter(lobbyManager, userService, authService)
+	router := http.NewRouter(lobbyManager, userService, authService, setRepo)
 	router.ServeHTTP()
 }
