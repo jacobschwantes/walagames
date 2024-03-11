@@ -1,4 +1,5 @@
 export enum LobbyEvent {
+  INITIAL_STATE = "INITIAL_STATE",
   NEW_MESSAGE = "NEW_MESSAGE",
   SERVER_MESSAGE = "SERVER_MESSAGE",
   PLAYER_JOIN = "PLAYER_JOIN",
@@ -9,6 +10,7 @@ export enum LobbyEvent {
 }
 
 export enum PlayerAction {
+  JOIN_LOBBY = "JOIN_LOBBY",
   READY = "READY",
   UNREADY = "UNREADY",
   START_GAME = "START_GAME",

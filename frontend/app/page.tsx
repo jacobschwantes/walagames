@@ -88,6 +88,8 @@ export default async function Home() {
   );
 }
 
+
+
 const JoinLobbyOrHost = () => {
   return (
     <ul className="grid grid-cols-2 w-full gap-5">

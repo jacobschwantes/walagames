@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "next-auth";
 import { CarrotIcon } from "lucide-react";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
-import { SignOut } from "./auth-components";
+import { SignOut } from "../auth-components";
 interface HeaderProps {}
 const Header: NextComponentType<
   NextPageContext,
@@ -32,7 +32,7 @@ const Header: NextComponentType<
     <header className="w-full p-2 px-4 flex justify-between items-center bg-gray-950/40 border-b border-b-sky-500">
       <div>
         <h1 className="text-5xl font-bold italic">
-          <span className="text-red-500">Quiz</span>
+          <span className="text-red-600">Quiz</span>
           <span className="text-sky-500">Blitz</span>
         </h1>
       </div>
@@ -91,36 +91,18 @@ export function DropdownMenuDemo({ user }: { user: User }) {
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 ">
-        {/* <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator /> */}
+        <DropdownMenuLabel className="font-normal">
+          My Account
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {/* <DropdownMenuItem>
-            Profile
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Billing
-            <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-          </DropdownMenuItem> */}
-          <DropdownMenuItem>
-            Settings
-            {/* <DropdownMenuShortcut>⌘S</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
-          {/* <DropdownMenuItem>
-            Keyboard shortcuts
-            <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
-          </DropdownMenuItem> */}
+          <DropdownMenuItem>Profile</DropdownMenuItem>
+          <DropdownMenuItem>Settings</DropdownMenuItem>
         </DropdownMenuGroup>
-
-        {/* <DropdownMenuSeparator /> */}
-
         <DropdownMenuItem>Support</DropdownMenuItem>
-
-        {/* <DropdownMenuSeparator /> */}
-
+        <DropdownMenuSeparator />
         <DropdownMenuItem>
           <SignOut>Sign Out </SignOut>
-          {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

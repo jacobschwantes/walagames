@@ -1,11 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-
 import { LobbyState, PlayerAction, LobbyEvent, PlayerRole } from "@/lib/types";
-import { set } from "react-hook-form";
 
 export const useLobby = (
-  url: string
+  url: string,
+  username?: string
 ): [LobbyState, (type: PlayerAction, payload: any) => void] => {
   const ws = useRef<WebSocket | null>(null);
   const mountedRef = useRef(false);
@@ -19,12 +18,11 @@ export const useLobby = (
   });
 
   useEffect(() => {
-    if (mountedRef.current) {
+    if (mountedRef.current && url) {
       ws.current = new WebSocket(url);
 
       ws.current.onopen = () => {
-        setLobbyState((prevState) => ({ ...prevState, isConnected: true }));
-        toast.success("Connected to lobby");
+        // sendEvent(PlayerAction.JOIN_LOBBY, { username });
       };
 
       ws.current.onmessage = (event) => {
@@ -33,17 +31,17 @@ export const useLobby = (
         handleEvent(type, payload);
       };
 
-      ws.current.onclose = () => {
+      ws.current.onclose = (e) => {
         setLobbyState((prevState) => ({
           ...prevState,
           isConnected: false,
           exited: true,
         }));
-        toast.error("Disconnected from lobby");
+        lobbyState.isConnected && toast.error("Disconnected from lobby");
       };
 
       ws.current.onerror = () => {
-        toast.error("Failed to connect to lobby");
+        toast.error("Lobby connection failed");
       };
 
       return () => {
@@ -54,10 +52,10 @@ export const useLobby = (
     return () => {
       mountedRef.current = true;
     };
-  }, []);
+  }, [url]);
 
   const sendEvent = (type: PlayerAction, payload: any) => {
-    if (ws.current && lobbyState.isConnected) {
+    if (ws.current) {
       ws.current.send(JSON.stringify({ type, payload }));
     }
   };
@@ -121,6 +119,16 @@ export const useLobby = (
           },
         }));
         break;
+      case LobbyEvent.INITIAL_STATE:
+        setLobbyState((prevState) => ({
+          ...prevState,
+          isConnected: true,
+          gameState: {
+            ...prevState.gameState,
+            ...payload,
+          },
+        }));
+        toast.success("Connected to lobby");
       default:
         console.log(`Unhandled event type: ${type}`);
         break;
