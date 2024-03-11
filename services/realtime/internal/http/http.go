@@ -18,26 +18,21 @@ func NewRouter(lm realtime.LobbyManager, us realtime.UserService, as realtime.Au
 	return &Router{lm, us, as}
 }
 
-func (router *Router) ServeHTTP() {
+func (rtr *Router) ServeHTTP() {
 	mux := http.NewServeMux()
 
 	// TODO: rate limiting middleware
+	// todo: logging middleware
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		authHandler(router.userService, router.authService, w, r)
-	})
+	mux.Handle("/auth", http.HandlerFunc(rtr.authHandler))
 
-	mux.HandleFunc("/join/{lobbyCode}", func(w http.ResponseWriter, r *http.Request) {
-		joinHandler(router.lobbyService, router.userService, router.authService, w, r)
-	})
+	mux.Handle("/lobby/connect", rtr.authMiddleware(http.HandlerFunc(rtr.lobbyHandler)))
 
-	mux.HandleFunc("/host", func(w http.ResponseWriter, r *http.Request) {
-		hostHandler(router.lobbyService, router.userService, router.authService, w, r)
-	})
+	// mux.HandleFunc("/lobby/exists", rtr.lobbyExistsHandler)
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {

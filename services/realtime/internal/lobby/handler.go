@@ -11,6 +11,18 @@ import (
 func HandlePlayerAction(c *realtime.Client, event realtime.Event) {
 
 	switch event.Type {
+	case "JOIN_LOBBY":
+		// Logic to handle player info
+		fmt.Println("Received join lobby from client:", event.Payload)
+		if c.PlayerInfo.Status == realtime.Connecting {
+
+		
+			fmt.Println("Received player info from client:", event.Payload)
+			
+			c.PlayerInfo.Status = realtime.Connected
+			c.PlayerInfo.Username = event.Payload.(map[string]interface{})["username"].(string)
+			HandlePlayerJoin(c)
+		}
 	case "SEND_MESSAGE":
 		// Logic to handle new message
 		fmt.Println("Received message from client:", event.Payload)
@@ -73,21 +85,6 @@ func Run(lm realtime.LobbyManager, l *realtime.Lobby) {
 		select {
 		case client := <-l.Register:
 			RegisterClient(client)
-
-			players := GetPlayerList(l)
-			playerList, _ := json.Marshal(&realtime.Event{Type: "PLAYER_LIST", Payload: players})
-
-			BroadcastToAll(l, playerList)
-
-			lobbyState := realtime.LobbyState{
-				Code:     l.Code,
-				Players:  GetPlayerList(l),
-				State:    l.Game.State,
-				Settings: l.Game.Settings,
-			}
-
-			msg, _ := json.Marshal(&realtime.Event{Type: "LOBBY_STATE", Payload: lobbyState})
-			client.Send <- msg
 		case client := <-l.Unregister:
 			UnregisterClient(client)
 
@@ -128,9 +125,10 @@ func BroadcastServerMessage(l *realtime.Lobby, message string) {
 func RegisterClient(c *realtime.Client) {
 	// TODO: Check if the lobby is full, perms, etc
 	// TODO: close the connection if the lobby is full
-	BroadcastServerMessage(c.Lobby, fmt.Sprintf("%s has joined the lobby", c.PlayerInfo.Username))
-
 	c.Lobby.Clients[c] = true
+	if c.PlayerInfo.Status == realtime.Connected {
+		HandlePlayerJoin(c)
+	}
 }
 
 func UnregisterClient(c *realtime.Client) {
@@ -170,4 +168,22 @@ func GetPlayerList(l *realtime.Lobby) []realtime.Player {
 		players = append(players, *c.PlayerInfo)
 	}
 	return players
+}
+
+func HandlePlayerJoin(c *realtime.Client) {
+	players := GetPlayerList(c.Lobby)
+	playerList, _ := json.Marshal(&realtime.Event{Type: "PLAYER_LIST", Payload: players})
+
+	BroadcastToAll(c.Lobby, playerList)
+	BroadcastServerMessage(c.Lobby, fmt.Sprintf("%s has joined the lobby", c.PlayerInfo.Username))
+
+	lobbyState := realtime.LobbyState{
+		Code:     c.Lobby.Code,
+		Players:  GetPlayerList(c.Lobby),
+		State:    c.Lobby.Game.State,
+		Settings: c.Lobby.Game.Settings,
+	}
+
+	msg, _ := json.Marshal(&realtime.Event{Type: "INITIAL_STATE", Payload: lobbyState})
+	c.Send <- msg
 }

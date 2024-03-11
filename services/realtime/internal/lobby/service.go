@@ -17,8 +17,8 @@ type lobbyManager struct {
 
 const (
 	MAX_LOBBIES      = 5
-	LOBBY_TIMEOUT    = 2 * time.Minute
-	CLEANUP_INTERVAL = 1 * time.Minute
+	LOBBY_TIMEOUT    = 15 * time.Minute
+	CLEANUP_INTERVAL = 5 * time.Minute
 )
 
 func NewManager() realtime.LobbyManager {
@@ -76,7 +76,7 @@ func (ls *lobbyManager) Lobby(code string) (*realtime.Lobby, error) {
 // TODO: this should be chagned to handle checking whether the code exists or not before returning
 // TODO: we could insert to redis with a key of the code and value of the lobby id (down the line, the server that the lobby is on as well), then we can check if the code exists or not
 func generateLobbyCode(length int) (string, error) {
-	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "ABCDEFGHIJKLMNPQRSTUVWXYZ"
 	b := make([]byte, length)
 	if _, err := rand.Read(b); err != nil {
 		return "", err

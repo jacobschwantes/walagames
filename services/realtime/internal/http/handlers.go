@@ -1,98 +1,52 @@
 package http
 
 import (
-	"context"
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal/websocket"
 	"net/http"
 	"strings"
+
+	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
+	"github.com/jacobschwantes/quizblitz/services/realtime/internal/websocket"
 )
 
-func newAuthenticatedPlayer(ctx context.Context, us realtime.UserRepository, as realtime.AuthService, token string, role realtime.PlayerRole) (*realtime.Player, error) {
-	userID, err := as.ConsumeTemporaryAuthToken(ctx, token)
-	if err != nil {
-		return nil, err
-	}
-	user, err := us.User(userID)
-	if err != nil {
-		return nil, err
-	}
-	return realtime.NewPlayer(*user.Name, *user.Image, role, true), nil
-}
+func (rtr *Router) lobbyHandler(w http.ResponseWriter, r *http.Request) {
+	var client *realtime.Client
+	var lobby *realtime.Lobby
+	var err error
+	player := r.Context().Value(userContextKey).(*realtime.Player)
+	lobbyCode := r.URL.Query().Get("code")
 
-func hostHandler(lm realtime.LobbyManager, us realtime.UserService, as realtime.AuthService, w http.ResponseWriter, r *http.Request) {
-	if token := r.URL.Query().Get("token"); token != "" {
-		player, err := newAuthenticatedPlayer(r.Context(), us, as, token, realtime.RoleHost)
-		if err != nil {
-			http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
-			return
-		}
-		
-		lobby, err := lm.CreateLobby()
-		if err != nil {
-			http.Error(w, "Failed to create lobby.", http.StatusInternalServerError)
-			return
-		}
-
-		conn, err := websocket.UpgradeConnection(w, r)
-		if err != nil {
-			lm.CloseLobby(lobby.Code, "Failed to upgrade to websocket connection.")
-			http.Error(w, "Failed to upgrade to websocket connection.", http.StatusInternalServerError)
-			return
-		}
-
-		c := realtime.NewClient(lobby, conn, player)
-		c.Lobby.Register <- c
-		go websocket.WritePump(c)
-		go websocket.ReadPump(c)
-	} else {
-		http.Error(w, "Token is required.", http.StatusBadRequest)
-		return
-	}
-}
-
-func joinHandler(lm realtime.LobbyManager, us realtime.UserService, as realtime.AuthService, w http.ResponseWriter, r *http.Request) {
-	var player *realtime.Player
-
-	if lobbyCode := r.PathValue("lobbyCode"); lobbyCode != "" {
-		lobby, err := lm.Lobby(lobbyCode)
+	if lobbyCode != "" {
+		lobby, err = rtr.lobbyService.Lobby(lobbyCode)
 		if err != nil {
 			http.Error(w, "Lobby not found.", http.StatusNotFound)
 			return
 		}
-
-		if token := r.URL.Query().Get("token"); token != "" {
-			player, err = newAuthenticatedPlayer(r.Context(), us, as, token, realtime.RoleAuthenticatedPlayer)
+	} else {
+		if player.Authenticated {
+			lobby, err = rtr.lobbyService.CreateLobby()
 			if err != nil {
-				http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
+				http.Error(w, "Failed to create lobby.", http.StatusInternalServerError)
 				return
 			}
+			player.Role = realtime.RoleHost
 		} else {
-			if username := r.URL.Query().Get("username"); username != "" {
-				player = realtime.NewPlayer(username, "", realtime.RoleGuestPlayer, false)
-			} else {
-				http.Error(w, "Username is required.", http.StatusBadRequest)
-				return
-			}
-		}
-
-		conn, err := websocket.UpgradeConnection(w, r)
-		if err != nil {
-			http.Error(w, "Failed to upgrade to websocket connection.", http.StatusInternalServerError)
+			http.Error(w, "You must have an account to create a lobby.", http.StatusBadRequest)
 			return
 		}
-
-		c := realtime.NewClient(lobby, conn, player)
-		c.Lobby.Register <- c
-		go websocket.WritePump(c)
-		go websocket.ReadPump(c)
-	} else {
-		http.Error(w, "Lobby code is required.", http.StatusBadRequest)
+	}
+	conn, err := websocket.UpgradeConnection(w, r)
+	if err != nil {
+		http.Error(w, "Failed to upgrade to websocket connection.", http.StatusInternalServerError)
 		return
 	}
+
+	client = realtime.NewClient(lobby, conn, player)
+	client.Lobby.Register <- client
+	go websocket.WritePump(client)
+	go websocket.ReadPump(client)
 }
 
-func authHandler(us realtime.UserService, as realtime.AuthService, w http.ResponseWriter, r *http.Request) {
+func (rtr *Router) authHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
@@ -104,13 +58,13 @@ func authHandler(us realtime.UserService, as realtime.AuthService, w http.Respon
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			sessionToken := authHeader[len("Bearer "):]
-			user, err := us.UserBySession(sessionToken)
+			user, err := rtr.userService.UserBySession(sessionToken)
 			if err != nil {
 				http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
 				return
 			}
 
-			token, err := as.CreateTemporaryAuthToken(r.Context(), user.ID)
+			token, err := rtr.authService.CreateTemporaryAuthToken(r.Context(), user.ID)
 			if err != nil {
 				http.Error(w, "Failed to generate temporary authentication token.", http.StatusInternalServerError)
 				return
@@ -125,3 +79,23 @@ func authHandler(us realtime.UserService, as realtime.AuthService, w http.Respon
 		http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
 	}
 }
+
+// func (rtr *Router) lobbyExistsHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+// 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+// 	lobbyCode := r.URL.Query().Get("code")
+// 	if lobbyCode == "" {
+// 		fmt.Println("Lobby code is required.")
+// 		http.Error(w, "Lobby code is required.", http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	_, err := rtr.lobbyService.Lobby(lobbyCode)
+// 	if err != nil {
+// 		fmt.Println("Lobby not found.")
+// 		http.Error(w, "Lobby not found.", http.StatusNotFound)
+// 		return
+// 	}
+
+// 	w.WriteHeader(http.StatusOK)
+// }
