@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   if (!token) {
     return Response.redirect("/api/auth/signin");
   }
-  const ott = await fetch("http://localhost:8080/auth", {
+  const ott = await fetch("http://localhost:8081/auth", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

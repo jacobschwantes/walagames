@@ -16,15 +16,9 @@ func (rtr *Router) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var player *realtime.Player
 		if token := r.URL.Query().Get("token"); token != "" {
-			userID, err := rtr.authService.ConsumeTemporaryAuthToken(r.Context(), token)
+			user, err := rtr.apiClient.ValidateAuthToken(token)
 			if err != nil {
 				// TODO: handle token validation failure
-				log.Fatal(err)
-			}
-
-			user, err := rtr.userService.User(userID)
-			if err != nil {
-				// todo: handle user not found
 				log.Fatal(err)
 			}
 

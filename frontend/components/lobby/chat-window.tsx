@@ -153,7 +153,7 @@ const ChatMessage: React.FC<{ message: Message; username: string }> = ({
             />
             <AvatarFallback className="text-xs">JS</AvatarFallback>
           </Avatar>
-          <h3 className="text-xs">
+          <h3 className="text-xs text-white">
             {message.username === username ? "You" : message.username}
           </h3>
         </div>

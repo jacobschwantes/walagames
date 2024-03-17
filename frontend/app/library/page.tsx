@@ -8,6 +8,7 @@ import { AnimatePresence, motion, Reorder } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import {v4 as uuidv4} from 'uuid';
 
 const defaultTerms = [
   {
@@ -44,14 +45,18 @@ const Page: NextPage<PageProps> = ({}) => {
     setTerms((prev) => {
       const copy = [...prev];
       copy.splice(index, 0, {
-        // ! this strategy is not safe, but it's fine for now
-        id: terms.length + 1,
+        id: uuidv4(),
         term: "term",
         definition: "definition",
       });
       return copy;
     });
+    
   };
+
+  const handleCreateSet = async () => {
+    await fetch("http://localhost:3000/api/set")
+  }
 
   const handleDeleteTerm = (index: number) => {
     setTerms((prev) => {
@@ -69,7 +74,7 @@ const Page: NextPage<PageProps> = ({}) => {
         </div>
         <div className="flex gap-2">
           <Button className="btn-primary">Import</Button>
-          <Button className="btn-primary">Save</Button>
+          <Button onClick={handleCreateSet} className="btn-primary">Save</Button>
         </div>
       </div>
       <ScrollArea className=" h-[75vh]">

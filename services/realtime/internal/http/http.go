@@ -10,13 +10,12 @@ import (
 
 type Router struct {
 	lobbyService realtime.LobbyManager
-	userService  realtime.UserService
-	authService  realtime.AuthService
-	setRepo 	realtime.SetRepository
+	apiClient realtime.APIClient
+
 }
 
-func NewRouter(lm realtime.LobbyManager, us realtime.UserService, as realtime.AuthService, sr realtime.SetRepository) *Router {
-	return &Router{lm, us, as, sr}
+func NewRouter(lm realtime.LobbyManager, ac realtime.APIClient) *Router {
+	return &Router{lm, ac}
 }
 
 func (rtr *Router) ServeHTTP() {
@@ -29,7 +28,6 @@ func (rtr *Router) ServeHTTP() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.Handle("/auth", http.HandlerFunc(rtr.authHandler))
 
 	mux.Handle("/lobby/connect", rtr.authMiddleware(http.HandlerFunc(rtr.lobbyHandler)))
 

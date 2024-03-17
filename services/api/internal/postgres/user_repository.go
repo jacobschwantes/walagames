@@ -3,7 +3,7 @@ package postgres
 import (
 	"database/sql"
 
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
+	"github.com/jacobschwantes/quizblitz/services/api/internal"
 
 	"log"
 )
@@ -13,16 +13,16 @@ type userRepository struct {
 }
 
 // NewUserRepository creates a new UserRepository.
-func NewUserRepository(db *sql.DB) realtime.UserRepository {
+func NewUserRepository(db *sql.DB) api.UserRepository {
 	return &userRepository{
 		db,
 	}
 }
 
 // GetUserByID retrieves a user by their ID from the database.
-func (repo *userRepository) User(id string) (*realtime.User, error) {
-	var user realtime.User
-	query := `SELECT id, name, email, image  FROM "User" WHERE "id" = $1`
+func (repo *userRepository) User(id string) (*api.User, error) {
+	var user api.User
+	query := `SELECT id, name, email, image  FROM "users" WHERE "id" = $1`
 	row := repo.db.QueryRow(query, id)
 	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Image)
 
@@ -34,9 +34,9 @@ func (repo *userRepository) User(id string) (*realtime.User, error) {
 	return &user, nil
 }
 
-func (repo *userRepository) UserBySession(token string) (*realtime.User, error) {
+func (repo *userRepository) UserBySession(token string) (*api.User, error) {
 	var userId string
-	query := `SELECT "userId" FROM "Session" WHERE "sessionToken" = $1`
+	query := `SELECT "userId" FROM "sessions" WHERE "sessionToken" = $1`
 	row := repo.db.QueryRow(query, token)
 	err := row.Scan(&userId)
 	if err != nil {

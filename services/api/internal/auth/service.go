@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/rand"
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
+	"github.com/jacobschwantes/quizblitz/services/api/internal"
 )
 
 func generateAuthToken(length int) (string, error) {
@@ -19,10 +19,10 @@ func generateAuthToken(length int) (string, error) {
 }
 
 type authService struct {
-	repo realtime.AuthRepository
+	repo api.AuthRepository
 }
 
-func NewService(repo realtime.AuthRepository) realtime.AuthService {
+func NewService(repo api.AuthRepository) api.AuthService {
 	return &authService{repo}
 }
 

@@ -1,4 +1,4 @@
-package realtime
+package api
 
 import (
 	"time"
@@ -38,9 +38,6 @@ type User struct {
 	Email         *string    `json:"email"`
 	EmailVerified *time.Time `json:"emailVerified"`
 	Image         *string    `json:"image"`
-	// Accounts and Sessions relationships are represented as slices of Account and Session
-	Accounts []Account `json:"accounts"`
-	Sessions []Session `json:"sessions"`
 }
 
 // UserRepository defines the interface for user data operations.

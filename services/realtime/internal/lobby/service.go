@@ -29,13 +29,9 @@ func NewManager() realtime.LobbyManager {
 	return lm
 }
 
-func (ls *lobbyManager) CreateLobby() (*realtime.Lobby, error) {
+func (ls *lobbyManager) CreateLobby(code string) (*realtime.Lobby, error) {
 	if len(ls.repo.Lobbies()) >= ls.maxLobbies {
 		return nil, fmt.Errorf("max lobbies reached")
-	}
-	code, err := generateLobbyCode(4)
-	if err != nil {
-		return nil, err
 	}
 
 	lobby, err := realtime.NewLobby(code)

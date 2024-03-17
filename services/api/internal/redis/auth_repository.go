@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
+	"github.com/jacobschwantes/quizblitz/services/api/internal"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -18,7 +18,7 @@ type authRepository struct {
 	rdb *redis.Client
 }
 
-func NewAuthRepository(rdb *redis.Client) realtime.AuthRepository {
+func NewAuthRepository(rdb *redis.Client) api.AuthRepository {
 	return &authRepository{
 		rdb,
 	}
