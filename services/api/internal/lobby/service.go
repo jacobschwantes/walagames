@@ -40,6 +40,10 @@ func (ls *lobbyService) GetLobbyState(ctx context.Context, code string) (*api.Lo
 	return ls.repo.GetLobbyMetadata(ctx, code)
 }
 
+// func (ls *lobbyService) InitializeNewLobby(ctx context.Context) {
+
+// }
+
 func generateLobbyCode(length int) (string, error) {
 	const charset = "ABCDEFGHIJKLMNPQRSTUVWXYZ"
 	b := make([]byte, length)

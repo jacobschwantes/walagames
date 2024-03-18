@@ -3,6 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/gorilla/websocket"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
@@ -17,7 +18,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		allowedOrigin := "http://localhost:3000" // Adjust this to match your Next.js app's origin
+		allowedOrigin := os.Getenv("CORS_ORIGIN") // Adjust this to match your Next.js app's origin
 		return r.Header.Get("Origin") == allowedOrigin
 	},
 }

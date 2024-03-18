@@ -3,24 +3,28 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"os"
 	"os/signal"
 
+	"github.com/jacobschwantes/quizblitz/services/api/internal"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/auth"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/http"
+	"github.com/jacobschwantes/quizblitz/services/api/internal/lobby"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/postgres"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/redis"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/user"
-	"github.com/jacobschwantes/quizblitz/services/api/internal"
-	"github.com/jacobschwantes/quizblitz/services/api/internal/lobby"
 )
-
-
 
 func run(ctx context.Context) error {
 	srvConfig := api.HTTPConfig{
 		Host: "localhost",
 		Port: "8081",
+	}
+
+	err := godotenv.Load()
+	if err != nil {
+		return err
 	}
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
@@ -38,8 +42,6 @@ func run(ctx context.Context) error {
 	userService := user.NewService(userRepo)
 	authService := auth.NewService(authRepo)
 	lobbyService := lobby.NewService(lobbyRepo)
-
-	
 
 	http.ServeHTTP(ctx, srvConfig, authService, userService, lobbyService)
 

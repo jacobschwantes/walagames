@@ -40,6 +40,7 @@ func ServeHTTP(ctx context.Context, config api.HTTPConfig, authService api.AuthS
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
 		}
+		fmt.Println("\nhttp server shut down")
 	}()
 	wg.Wait()
 	return nil
@@ -55,7 +56,7 @@ func NewServer(authService api.AuthService, userService api.UserService, lobbySe
 	addPublicRoutes(mux, authService, userService, lobbyService)
 
 	var handler http.Handler = mux
-
+	// !some routes need to bypass auth middleware
 	handler = authMiddleware(handler)
 	return &handler
 }
@@ -80,6 +81,7 @@ func addPublicRoutes(mux *http.ServeMux, authService api.AuthService, userServic
 	mux.Handle("/auth", authHandler(authService, userService))
 	// TODO: change this route to use slug path for lobby code
 	mux.Handle("/lobby/{code}", lobbyJoinHandler(lobbyService))
+	// mux.Handle("/ip", ipHandler())
 	// TODO: implement these handlers and remove /auth route
 	// mux.Handle("/lobby/host", lobbyHostHandler(lobbyService))
 
