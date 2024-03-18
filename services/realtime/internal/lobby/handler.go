@@ -16,9 +16,8 @@ func HandlePlayerAction(c *realtime.Client, event realtime.Event) {
 		fmt.Println("Received join lobby from client:", event.Payload)
 		if c.PlayerInfo.Status == realtime.Connecting {
 
-		
 			fmt.Println("Received player info from client:", event.Payload)
-			
+
 			c.PlayerInfo.Status = realtime.Connected
 			c.PlayerInfo.Username = event.Payload.(map[string]interface{})["username"].(string)
 			HandlePlayerJoin(c)
@@ -81,10 +80,17 @@ func HandlePlayerAction(c *realtime.Client, event realtime.Event) {
 func Run(lm realtime.LobbyManager, l *realtime.Lobby) {
 	// gs := game.NewGameService()
 	l.Game = realtime.NewGame("default", 10, 10)
+
 	for {
 		select {
 		case client := <-l.Register:
 			RegisterClient(client)
+			lm.PushLobbyStateUpdate(realtime.LobbyStateUpdate{
+				Code:        l.Code,
+				PlayerCount: len(l.Clients),
+				MaxPlayers:  10,
+				HostServer:  "localhost:8080",
+			})
 		case client := <-l.Unregister:
 			UnregisterClient(client)
 

@@ -20,27 +20,16 @@ const LobbyController = ({ user, isHost }: JoinLobbyControllerProps) => {
   const [lobbyState, sendEvent] = useLobby(connectionStr, username);
   const [code, setCode] = useState("");
   const handleJoinLobby = async () => {
-    // const exists = await fetch(
-    //   "http://localhost:8080/lobby/exists?code=" + code.toUpperCase()
-    // )
-    //   .then((res) => res.ok)
-    //   .catch((e) => {
-    //     toast.error(e);
-    //   });
-
-    // if (!exists) {
-    //   toast.error("Lobby not found");
-    //   return;
-    // }
 
     if (user) {
-      const { ott } = await fetch("http://localhost:3000/api/auth/ott")
+      const { ott, lobbyData } = await fetch("http://localhost:3000/api/auth/ott?code=" + code.toUpperCase())
         .then((res) => res.json())
         .catch((e) => {
           toast.error("Failed to create lobby. Please try again.");
         });
+
       setConnectionStr(
-        `ws://localhost:8080/lobby/connect?code=${code.toUpperCase()}&token=${ott}`
+        `ws://${lobbyData.HostServer}/lobby/connect?code=${code.toUpperCase()}&token=${ott}`
       );
     } else {
       setConnectionStr(
@@ -50,7 +39,7 @@ const LobbyController = ({ user, isHost }: JoinLobbyControllerProps) => {
   };
 
   const handleCreateLobby = async () => {
-    const { ott } = await fetch("http://localhost:3000/api/auth/ott")
+    const { ott } = await fetch("http://localhost:3000/api/auth/ott?code=" + code.toUpperCase())
       .then((res) => res.json())
       .catch((e) => {
         toast.error("Failed to create lobby. Please try again.");

@@ -18,4 +18,12 @@ type APIClient interface {
 	ValidateAuthToken(token string) (*UserInfo, error)
 	GetLobbyCode() (string, error)
 	FetchSetData(setId int) (*SetData, error)
+	PushLobbyStateUpdate(update LobbyStateUpdate) error
+}
+
+type LobbyStateUpdate struct {
+	Code        string `json:"code,omitempty"`
+	PlayerCount int    `json:"playerCount,omitempty"`
+	MaxPlayers  int    `json:"maxPlayers,omitempty"`
+	HostServer  string `json:"hostServer,omitempty"`
 }

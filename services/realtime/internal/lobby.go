@@ -63,6 +63,7 @@ type LobbyManager interface {
 	Lobby(code string) (*Lobby, error)
 	CreateLobby(code string) (*Lobby, error)
 	CloseLobby(code string, message string) error
+	PushLobbyStateUpdate(update LobbyStateUpdate)
 }
 
 type LobbyRepository interface {
