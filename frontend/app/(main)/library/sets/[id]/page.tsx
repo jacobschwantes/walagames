@@ -8,30 +8,17 @@ import { AnimatePresence, motion, Reorder } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import { Term } from "@/lib/types";
 
-const defaultTerms = [
-  {
-    id: 1,
-    term: "term",
-    definition: "definition",
-  },
-  {
-    id: 2,
-    term: "term",
-    definition: "definition",
-  },
-  // {
-  //   id: 3,
-  //   term: "term",
-  //   definition: "definition",
-  // },
-  // {
-  //   id: 4,
-  //   term: "term",
-  //   definition: "definition",
-  // },
-];
+
+const newTerm = (term: Partial<Term>) => {
+  return {
+    ...term,
+    tags: [],
+  };
+};
+const defaultTerms = Array.from(Array(2)).map(() => newTerm({id: uuidv4(), term: "term", definition: "defn"}));
 
 interface PageProps {}
 const Page: NextPage<PageProps> = ({}) => {
@@ -44,19 +31,21 @@ const Page: NextPage<PageProps> = ({}) => {
   const handleNewTerm = (index: number) => {
     setTerms((prev) => {
       const copy = [...prev];
-      copy.splice(index, 0, {
-        id: uuidv4(),
-        term: "term",
-        definition: "definition",
-      });
+      copy.splice(index, 0, newTerm({id: uuidv4(), term: "term", definition: "defn"}));
       return copy;
     });
-    
   };
 
   const handleCreateSet = async () => {
-    await fetch("http://localhost:3000/api/set")
-  }
+    await fetch("/api/sets", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        description,
+        terms,
+      }),
+    });
+  };
 
   const handleDeleteTerm = (index: number) => {
     setTerms((prev) => {
@@ -74,7 +63,9 @@ const Page: NextPage<PageProps> = ({}) => {
         </div>
         <div className="flex gap-2">
           <Button className="btn-primary">Import</Button>
-          <Button onClick={handleCreateSet} className="btn-primary">Save</Button>
+          <Button onClick={handleCreateSet} className="btn-primary">
+            Save
+          </Button>
         </div>
       </div>
       <ScrollArea className=" h-[75vh]">

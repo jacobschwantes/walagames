@@ -22,14 +22,20 @@ const LobbyController = ({ user, isHost }: JoinLobbyControllerProps) => {
   const handleJoinLobby = async () => {
 
     if (user) {
-      const { ott, lobbyData } = await fetch("http://localhost:3000/api/auth/ott?code=" + code.toUpperCase())
+      const { server, meta, token } = await fetch("/api/lobby/join?code=" + code.toUpperCase(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+      })
         .then((res) => res.json())
         .catch((e) => {
-          toast.error("Failed to create lobby. Please try again.");
+          toast.error("Failed to join lobby. Please try again.");
         });
 
       setConnectionStr(
-        `ws://${lobbyData.HostServer}/lobby/connect?code=${code.toUpperCase()}&token=${ott}`
+        `ws://${server}/lobby/connect?code=${code.toUpperCase()}&token=${token}`
       );
     } else {
       setConnectionStr(
@@ -39,12 +45,14 @@ const LobbyController = ({ user, isHost }: JoinLobbyControllerProps) => {
   };
 
   const handleCreateLobby = async () => {
-    const { ott } = await fetch("http://localhost:3000/api/auth/ott?code=" + code.toUpperCase())
+    const { server, token } = await fetch("/api/lobby/host")
       .then((res) => res.json())
       .catch((e) => {
         toast.error("Failed to create lobby. Please try again.");
       });
-    setConnectionStr(`ws://localhost:8080/lobby/connect?token=${ott}`);
+    if (server && token) {
+      setConnectionStr(`ws://${server}/lobby/connect?token=${token}`);
+    }
   };
 
   return (

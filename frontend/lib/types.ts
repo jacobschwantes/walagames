@@ -68,3 +68,58 @@ type GameState = {
     roundLength: number;
   };
 };
+
+
+
+
+export type SetVisibility = "public" | "private" | "collaborators" | "friends";
+
+
+export type SetCompletionStatus = {
+  completed: number;
+  total: number;
+  in_progress: boolean;
+};
+
+
+export type TermTag = {
+  id: string;
+  tag: string;
+};
+
+
+export type Term = {
+  id: string;
+  owner_id: string;
+  term: string;
+  definition: string;
+  tags: TermTag[];
+  last_activity_at: Date;
+  created_at: Date;
+  updated_at: Date;
+};
+
+
+export type SetTag = {
+  id: string;
+  tag: string;
+};
+
+
+export type Set = {
+  id: string;
+  owner_id: string;
+  collaborators: string[];
+  name: string;
+  description: string;
+  image_url: string;
+  tags: SetTag[];
+  terms: Term[];
+  visibility: SetVisibility;
+  version: string;
+  last_activity_at: Date;
+  created_at: Date;
+  updated_at: Date;
+  likes: number;
+  completion_status: SetCompletionStatus;
+};

@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "next-auth";
 import { CarrotIcon } from "lucide-react";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
-import { SignOut } from "../auth-components";
 interface HeaderProps {}
 const Header: NextComponentType<
   NextPageContext,
@@ -101,9 +100,9 @@ export function DropdownMenuDemo({ user }: { user: User }) {
         </DropdownMenuGroup>
         <DropdownMenuItem>Support</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        {/* <DropdownMenuItem>
           <SignOut>Sign Out </SignOut>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
       </DropdownMenuContent>
     </DropdownMenu>
   );
