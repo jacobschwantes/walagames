@@ -1,10 +1,10 @@
-package http 
+package http
 
 import (
 	"encoding/json"
+	"github.com/jacobschwantes/quizblitz/services/api/internal"
 	"log"
 	"net/http"
-	"github.com/jacobschwantes/quizblitz/services/api/internal"
 )
 
 func handleTokenValidation(authService api.AuthService, userService api.UserService) http.HandlerFunc {
@@ -42,27 +42,7 @@ func handleTokenValidation(authService api.AuthService, userService api.UserServ
 		http.Error(w, "Token is required.", http.StatusBadRequest)
 	}
 }
-
-
-func lobbyCodeHandler(lobbyService api.LobbyService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		code, err := lobbyService.GenerateUniqueLobbyCode(r.Context())
-		if err != nil {
-			http.Error(w, "Failed to generate lobby code.", http.StatusInternalServerError)
-			return
-		}
-
-		msg, err := json.Marshal(code)
-		if err != nil {
-			log.Fatal(err)
-			http.Error(w, "Failed to generate lobby code.", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(msg)
-	}
-}
+// TODO: initialize a lobby along with the code in redis
 func lobbyCreateHandler(lobbyService api.LobbyService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		code, err := lobbyService.GenerateUniqueLobbyCode(r.Context())
@@ -91,7 +71,6 @@ func lobbyUpdateHandler(lobbyService api.LobbyService) http.HandlerFunc {
 			http.Error(w, "Failed to decode lobby state.", http.StatusBadRequest)
 			return
 		}
-
 
 		if err := lobbyService.SaveLobbyState(r.Context(), lobbyState.Code, lobbyState); err != nil {
 			log.Fatal(err)

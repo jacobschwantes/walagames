@@ -1,41 +1,59 @@
 package http
 
 import (
+	"context"
 	"net/http"
 
+	"fmt"
 	"log"
+	"os"
+	"sync"
+	"time"
 
 	realtime "github.com/jacobschwantes/quizblitz/services/realtime/internal"
 )
 
-type Router struct {
-	lobbyService realtime.LobbyManager
-	apiClient realtime.APIClient
+func ServeHTTP(ctx context.Context, config realtime.HTTPConfig, lobbyService realtime.LobbyManager, apiClient realtime.APIClient) error {
+	srv := NewServer(lobbyService, apiClient)
 
+	httpServer := &http.Server{
+		Addr:    config.Host + ":" + config.Port,
+		Handler: *srv,
+	}
+
+	go func() {
+		log.Printf("listening on %s\n", httpServer.Addr)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
+		}
+	}()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		// make a new context for shutdown
+		// shutdownCtx := context.Background()
+		shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
+		}
+		fmt.Println("\nhttp server shut down")
+	}()
+	wg.Wait()
+	return nil
 }
 
-func NewRouter(lm realtime.LobbyManager, ac realtime.APIClient) *Router {
-	return &Router{lm, ac}
-}
-
-func (rtr *Router) ServeHTTP() {
+func NewServer(lobbyService realtime.LobbyManager, apiClient realtime.APIClient) *http.Handler {
 	mux := http.NewServeMux()
-
-	// TODO: rate limiting middleware
-	// todo: logging middleware
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	mux.Handle("/lobby/connect", authMiddleware(lobbyHandler(lobbyService, apiClient), apiClient))
 
-	mux.Handle("/lobby/connect", rtr.authMiddleware(http.HandlerFunc(rtr.lobbyHandler)))
-
-	// mux.HandleFunc("/lobby/exists", rtr.lobbyExistsHandler)
-
-	err := http.ListenAndServe(":8080", mux)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-		return
-	}
+	var handler http.Handler = mux
+	return &handler
 }

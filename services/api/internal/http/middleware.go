@@ -7,11 +7,15 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	api "github.com/jacobschwantes/quizblitz/services/api/internal"
 )
 
 type contextKey string
 
+const authHeaderContextKey contextKey = "authHeader"
 const authTokenContextKey contextKey = "authToken"
+const userContextKey contextKey = "user"
 
 func internalOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,8 +30,8 @@ func internalOnly(next http.Handler) http.Handler {
 // ! add server ip check back in later
 func isInternal(r *http.Request) bool {
 	// isServer := isServerClient(r)
-	authToken := r.Context().Value(authTokenContextKey).(string)
-	isValidAuthToken := authToken == os.Getenv("INTERNAL_API_TOKEN")
+	authHeader := r.Context().Value(authHeaderContextKey).(string)
+	isValidAuthToken := authHeader == os.Getenv("INTERNAL_API_TOKEN")
 	return isValidAuthToken
 	// return isServer && isValidAuthToken
 }
@@ -62,7 +66,7 @@ func getClientIP(r *http.Request) string {
 	return ip
 }
 
-func authMiddleware(next http.Handler) http.Handler {
+func authHeaderMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -70,11 +74,44 @@ func authMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Authorization header is required and must start with 'Bearer '.", http.StatusBadRequest)
 			return
 		}
+
 		// Extract the token and add it to the context
-		authToken := authHeader[len("Bearer "):]
-		ctx := context.WithValue(r.Context(), authTokenContextKey, authToken)
+		authHeader = authHeader[len("Bearer "):]
+		ctx := context.WithValue(r.Context(), authHeaderContextKey, authHeader)
 		// Pass the request with the new context to the next handler
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
 
+func issueAuthTokenMiddleware(next http.Handler, authService api.AuthService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		user := r.Context().Value(userContextKey).(*api.User)
+		token, err := authService.CreateTemporaryAuthToken(r.Context(), user.ID)
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, "Failed to generate temporary authentication token.", http.StatusInternalServerError)
+			return
+		}
+
+		// add token to context
+		ctx := context.WithValue(r.Context(), authTokenContextKey, token)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+}
+
+func userMiddleware(next http.Handler, userService api.UserService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		sessionToken := r.Context().Value(authHeaderContextKey).(string)
+
+		user, err := userService.UserBySession(sessionToken)
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
+			return
+		}
+		ctx := context.WithValue(r.Context(), userContextKey, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

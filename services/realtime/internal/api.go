@@ -27,3 +27,8 @@ type LobbyStateUpdate struct {
 	MaxPlayers  int    `json:"maxPlayers,omitempty"`
 	HostServer  string `json:"hostServer,omitempty"`
 }
+
+type HTTPConfig struct {
+	Host string `json:"host"`
+	Port string `json:"port"`
+}

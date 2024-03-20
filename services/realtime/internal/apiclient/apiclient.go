@@ -65,7 +65,7 @@ func (c *apiClient) ValidateAuthToken(token string) (*realtime.UserInfo, error) 
 }
 
 func (c *apiClient) GetLobbyCode() (string, error) {
-	url := fmt.Sprintf("%s/lobby/code", c.BaseURL)
+	url := fmt.Sprintf("%s/lobby/create", c.BaseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println("failed to create request")

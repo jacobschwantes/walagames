@@ -24,8 +24,3 @@ type LobbyMetadata struct {
 	MaxPlayers  int
 	HostServer  string
 }
-
-
-type LobbyJoinRequest struct {
-	Code string `json:"code"`
-}

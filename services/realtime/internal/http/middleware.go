@@ -12,11 +12,11 @@ type contextKey string
 
 const userContextKey contextKey = "user"
 
-func (rtr *Router) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func authMiddleware(next http.HandlerFunc, apiClient realtime.APIClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var player *realtime.Player
 		if token := r.URL.Query().Get("token"); token != "" {
-			user, err := rtr.apiClient.ValidateAuthToken(token)
+			user, err := apiClient.ValidateAuthToken(token)
 			if err != nil {
 				// TODO: handle token validation failure
 				log.Fatal(err)

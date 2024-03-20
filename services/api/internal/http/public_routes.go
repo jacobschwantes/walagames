@@ -13,39 +13,6 @@ import (
 	api "github.com/jacobschwantes/quizblitz/services/api/internal"
 )
 
-func authHandler(authService api.AuthService, userService api.UserService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-
-		switch r.Method {
-		case http.MethodOptions:
-			w.WriteHeader(http.StatusOK)
-		case http.MethodPost:
-			authToken := r.Context().Value(authTokenContextKey).(string)
-			user, err := userService.UserBySession(authToken)
-			if err != nil {
-				log.Fatal(err)
-				http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
-				return
-			}
-
-			token, err := authService.CreateTemporaryAuthToken(r.Context(), user.ID)
-			if err != nil {
-				log.Fatal(err)
-				http.Error(w, "Failed to generate temporary authentication token.", http.StatusInternalServerError)
-				return
-			}
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(token))
-
-		default:
-			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
-		}
-	}
-}
-
 func ipHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
@@ -103,14 +70,14 @@ func haversineDistance(lat1, lon1, lat2, lon2 float64) float64 {
 
 func ipToCoordinates(ip string) (lat float64, long float64, err error) {
 	cwd, err := os.Getwd()
-    if err != nil {
-        fmt.Println("Error getting current working directory:", err)
-        return
-    }
+	if err != nil {
+		fmt.Println("Error getting current working directory:", err)
+		return
+	}
 
-    // Join the directory path with the filename
-    filename := "IP2LOCATION-LITE-DB11.BIN"
-    filepath := filepath.Join(cwd, filename)
+	// Join the directory path with the filename
+	filename := "IP2LOCATION-LITE-DB11.BIN"
+	filepath := filepath.Join(cwd, filename)
 
 	db, err := ip2location.OpenDB(filepath)
 	if err != nil {
@@ -133,6 +100,18 @@ func ipToCoordinates(ip string) (lat float64, long float64, err error) {
 
 // todo: refactor this
 func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
+	type lobbyJoinRequest struct {
+		Code string `json:"code"`
+	}
+	type lobbyJoinResponse struct {
+		Code   string `json:"code"`
+		Server string `json:"server"`
+		Meta   struct {
+			MaxPlayers int `json:"max_players"`
+		} `json:"meta"`
+		Token string `json:"token,omitempty"`
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -142,21 +121,36 @@ func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
 		case http.MethodOptions:
 			w.WriteHeader(http.StatusOK)
 		case http.MethodPost:
-			var joinRequest api.LobbyJoinRequest
-			if err := json.NewDecoder(r.Body).Decode(&joinRequest); err != nil {
-				log.Fatal(err)
-				http.Error(w, "Failed to decode join request.", http.StatusBadRequest)
+			authToken := r.Context().Value(authTokenContextKey).(string)
+			lobbyCode := r.PathValue("code")
+			if lobbyCode == "" {
+				http.Error(w, "Lobby code is required.", http.StatusBadRequest)
 				return
 			}
 
-			lobbyData, err := lobbyService.GetLobbyState(r.Context(), joinRequest.Code)
+			lobbyData, err := lobbyService.GetLobbyState(r.Context(), lobbyCode)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to get lobby data.", http.StatusInternalServerError)
 				return
 			}
 
-			jsonData, err := json.Marshal(lobbyData)
+			resp := &lobbyJoinResponse{
+				Code:   lobbyData.Code,
+				Server: lobbyData.HostServer,
+				Meta: struct {
+					MaxPlayers int `json:"max_players"`
+				}{
+					MaxPlayers: lobbyData.MaxPlayers,
+				},
+			}
+
+			if authToken != "" {
+				// if users are authenticated, we return the token issued from the middleware
+				resp.Token = authToken
+			}
+
+			jsonData, err := json.Marshal(resp)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to marshal lobby data.", http.StatusInternalServerError)
@@ -165,6 +159,131 @@ func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
 
 			w.WriteHeader(http.StatusOK)
 			w.Write(jsonData)
+		default:
+			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func lobbyHostHandler() http.HandlerFunc {
+	type lobbyHostResponse struct {
+		Token  string `json:"token"`
+		Server string `json:"server"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization")
+		w.Header().Set("Content-Type", "application/json")
+
+		switch r.Method {
+		case http.MethodOptions:
+			w.WriteHeader(http.StatusOK)
+		case http.MethodGet:
+			authToken := r.Context().Value(authTokenContextKey).(string)
+			// TODO: use geolocation to route to one of our servers in the pool
+			srvAddr := "localhost:8080"
+
+			resp := &lobbyHostResponse{
+				Token:  authToken,
+				Server: srvAddr,
+			}
+
+			jsonData, err := json.Marshal(resp)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to marshal lobby host response.", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonData)
+		default:
+			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
+			return
+		}
+	}
+}
+
+func setsHandler(setService api.SetService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		switch r.Method {
+		case http.MethodOptions:
+			w.WriteHeader(http.StatusOK)
+		case http.MethodGet:
+			user := r.Context().Value(userContextKey).(*api.User)
+			sets, err := setService.Sets(string(user.ID))
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to get sets.", http.StatusInternalServerError)
+				return
+			}
+
+			jsonData, err := json.Marshal(sets)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to marshal sets.", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonData)
+		default:
+			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func setHandler(setService api.SetService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		switch r.Method {
+		case http.MethodOptions:
+			w.WriteHeader(http.StatusOK)
+		case http.MethodGet:
+			setID := r.URL.Query().Get("id")
+			set, err := setService.Set(setID)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to get set.", http.StatusInternalServerError)
+				return
+			}
+
+			jsonData, err := json.Marshal(set)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to marshal set.", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonData)
+		case http.MethodPost:
+			var set api.Set
+			if err := json.NewDecoder(r.Body).Decode(&set); err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to decode set.", http.StatusBadRequest)
+				return
+			}
+
+			user := r.Context().Value(userContextKey).(*api.User)
+			set.OwnerID = user.ID
+
+			err := setService.CreateSet(set)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to create set.", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusCreated)
 		default:
 			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
 		}
