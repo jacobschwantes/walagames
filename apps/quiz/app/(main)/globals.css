@@ -124,3 +124,23 @@
     stroke-dashoffset: 151px;
   }
 }
+
+.loader {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-block;
+  border-top: 2px solid #FFF;
+  border-right: 2px solid transparent;
+  box-sizing: border-box;
+  animation: rotation .75s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+} 

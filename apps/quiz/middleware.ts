@@ -36,12 +36,12 @@ function signOut(request: NextRequest) {
 function shouldUpdateToken(tokens: BackendTokens) {
   // TODO: Implement a better way to check if the token is expired
   if (Date.now() < (tokens.expires_at - 400) * 1000) {
-    console.log("TOKEN IS NOT EXPIRED");
-    console.log(
-      "TOKEN EXPIRES IN",
-      Math.floor((tokens.expires_at * 1000 - Date.now()) / 60 / 1000),
-      "MINUTES"
-    );
+    // console.log("TOKEN IS NOT EXPIRED");
+    // console.log(
+    //   "TOKEN EXPIRES IN",
+    //   Math.floor((tokens.expires_at * 1000 - Date.now()) / 60 / 1000),
+    //   "MINUTES"
+    // );
     return false;
   }
   console.log("TOKEN IS EXPIRED, REFRESHING");
@@ -103,7 +103,7 @@ async function refreshToken(token: JWT): Promise<BackendTokens> {
   const tokens = await response.json();
 
   if (!response.ok) throw tokens;
-  console.log("TOKENS REFRESHED", tokens)
+  console.log("TOKENS REFRESHED")
   return {
     ...token, // Keep the previous token properties
     access_token: tokens.access_token,

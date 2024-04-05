@@ -31,7 +31,7 @@ export const Navigation = () => {
     {
       name: "Library",
       icon: (props) => <BookOpenIcon {...props} />,
-      href: "/lobby",
+      href: "/library",
       classNames: {
         icon: "text-green-500",
         highlight: "from-green-500",
