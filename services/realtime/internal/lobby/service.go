@@ -50,12 +50,13 @@ func (ls *lobbyManager) CreateLobby(code string) (*realtime.Lobby, error) {
 	}
 
 	go Run(ls, lobby)
+	fmt.Println("Created lobby with code:", code)
 	return lobby, nil
 }
 
 func (ls *lobbyManager) CloseLobby(code string, message string) error {
 	if lobby, err := ls.repo.Lobby(code); err == nil {
-		// lobby.Game.Control <- "END_GAME"
+		lobby.Game.Control <- "END_GAME"
 		for c := range lobby.Clients {
 			close(c.Close)
 		}

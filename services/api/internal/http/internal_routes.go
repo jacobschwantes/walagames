@@ -2,9 +2,15 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/jacobschwantes/quizblitz/services/api/internal"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
+	"time"
+
+	"github.com/FusionAuth/go-client/pkg/fusionauth"
+	"github.com/jacobschwantes/quizblitz/services/api/internal"
 )
 
 func handleTokenValidation(authService api.AuthService, userService api.UserService) http.HandlerFunc {
@@ -17,15 +23,51 @@ func handleTokenValidation(authService api.AuthService, userService api.UserServ
 				http.Error(w, "Failed to validate token.", http.StatusInternalServerError)
 				return
 			}
+			const host = "http://localhost:9011"
 
-			user, err := userService.User(userID)
+			var apiKey = os.Getenv("FUSIONAUTH_API_KEY")
+
+			var httpClient = &http.Client{
+				Timeout: time.Second * 10,
+			}
+
+			var baseURL, _ = url.Parse(host)
+
+			{ /*  Construct a new FusionAuth Client */
+			}
+			var client = fusionauth.NewClient(httpClient, baseURL, apiKey)
+
+			response, errors, err := client.RetrieveUser(userID)
 			if err != nil {
-				// todo: handle user not found
-
-				log.Fatal(err)
-				http.Error(w, "User not found.", http.StatusNotFound)
+				// err is a transport layer error (connection failed, etc)
+				fmt.Println(err)
 				return
 			}
+			if errors != nil {
+				// err is a FusionAuth response error (user couldn't be found, etc)
+				fmt.Println(response.StatusCode)
+				return
+			}
+			fmt.Println(response.User.Email)
+			fmt.Println(response.User.FirstName)
+			fmt.Println(response.User.LastName)
+			
+
+			var user = &api.User{
+				ID:    userID,
+				Email: &response.User.Email,
+				Name: &response.User.FullName,
+				Image: &response.User.ImageUrl,
+			}
+
+			// user, err := userService.User(userID)
+			// if err != nil {
+			// 	// todo: handle user not found
+
+			// 	log.Fatal(err)
+			// 	http.Error(w, "User not found.", http.StatusNotFound)
+			// 	return
+			// }
 
 			msg, err := json.Marshal(user)
 			if err != nil {
@@ -42,6 +84,7 @@ func handleTokenValidation(authService api.AuthService, userService api.UserServ
 		http.Error(w, "Token is required.", http.StatusBadRequest)
 	}
 }
+
 // TODO: initialize a lobby along with the code in redis
 func lobbyCreateHandler(lobbyService api.LobbyService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 
 	realtime "github.com/jacobschwantes/quizblitz/services/realtime/internal"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal/apiclient"
@@ -13,17 +14,20 @@ import (
 )
 
 func run(ctx context.Context) error {
-	srvConfig := realtime.HTTPConfig{
-		Host: "localhost",
-		Port: "8080",
-	}
-
 	err := godotenv.Load()
 	if err != nil {
 		return err
 	}
 
-	apiClient := apiclient.New(fmt.Sprintf("%s/%s", os.Getenv("API_ORIGIN"), "internal"))
+	srvConfig := realtime.HTTPConfig{
+		Host: os.Getenv("HOST"),
+		Port: os.Getenv("PORT"),
+	}
+
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+
+	apiClient := apiclient.New(os.Getenv("API_URL"))
 	lobbyManager := lobby.NewManager(apiClient)
 
 	http.ServeHTTP(ctx, srvConfig, lobbyManager, apiClient)

@@ -3,7 +3,7 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	// "os"
 
 	"github.com/gorilla/websocket"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
@@ -18,8 +18,10 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		allowedOrigin := os.Getenv("CORS_ORIGIN") // Adjust this to match your Next.js app's origin
-		return r.Header.Get("Origin") == allowedOrigin
+		// allowedOrigin := os.Getenv("CORS_ORIGIN") // Adjust this to match your Next.js app's origin
+		// return r.Header.Get("Origin") == allowedOrigin
+		// ! This is a security risk, but it's fine for local development
+		return true
 	},
 }
 
@@ -52,6 +54,7 @@ func UpgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn,
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine
 func ReadPump(c *realtime.Client) {
+	fmt.Println("read pump started for user:", c.PlayerInfo.Username)
 	defer func() {
 		fmt.Println("read pump closed for user:", c.PlayerInfo.Username)
 		c.Lobby.Unregister <- c
@@ -87,6 +90,7 @@ func ReadPump(c *realtime.Client) {
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
 func WritePump(c *realtime.Client) {
+	fmt.Println("write pump started for user:", c.PlayerInfo.Username)
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()

@@ -179,10 +179,10 @@ func lobbyHostHandler() http.HandlerFunc {
 		switch r.Method {
 		case http.MethodOptions:
 			w.WriteHeader(http.StatusOK)
-		case http.MethodGet:
+		case http.MethodPost:
 			authToken := r.Context().Value(authTokenContextKey).(string)
 			// TODO: use geolocation to route to one of our servers in the pool
-			srvAddr := "localhost:8080"
+			srvAddr := "localhost:8081"
 
 			resp := &lobbyHostResponse{
 				Token:  authToken,

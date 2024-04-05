@@ -13,7 +13,12 @@ import (
 	realtime "github.com/jacobschwantes/quizblitz/services/realtime/internal"
 )
 
-func ServeHTTP(ctx context.Context, config realtime.HTTPConfig, lobbyService realtime.LobbyManager, apiClient realtime.APIClient) error {
+func ServeHTTP(
+	ctx context.Context,
+	config realtime.HTTPConfig,
+	lobbyService realtime.LobbyManager,
+	apiClient realtime.APIClient,
+) error {
 	srv := NewServer(lobbyService, apiClient)
 
 	httpServer := &http.Server{
@@ -32,14 +37,12 @@ func ServeHTTP(ctx context.Context, config realtime.HTTPConfig, lobbyService rea
 	go func() {
 		defer wg.Done()
 		<-ctx.Done()
-		// make a new context for shutdown
-		// shutdownCtx := context.Background()
 		shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
 		}
-		fmt.Println("\nhttp server shut down")
+		fmt.Println("\nrealtime server shut down")
 	}()
 	wg.Wait()
 	return nil

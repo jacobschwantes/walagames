@@ -2,6 +2,8 @@ package http
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -15,7 +17,7 @@ type contextKey string
 
 const authHeaderContextKey contextKey = "authHeader"
 const authTokenContextKey contextKey = "authToken"
-const userContextKey contextKey = "user"
+const userContextKey contextKey = "userID"
 
 func internalOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +33,7 @@ func internalOnly(next http.Handler) http.Handler {
 func isInternal(r *http.Request) bool {
 	// isServer := isServerClient(r)
 	authHeader := r.Context().Value(authHeaderContextKey).(string)
-	isValidAuthToken := authHeader == os.Getenv("INTERNAL_API_TOKEN")
+	isValidAuthToken := authHeader == os.Getenv("INTERNAL_API_KEY")
 	return isValidAuthToken
 	// return isServer && isValidAuthToken
 }
@@ -86,8 +88,8 @@ func authHeaderMiddleware(next http.Handler) http.Handler {
 func issueAuthTokenMiddleware(next http.Handler, authService api.AuthService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		user := r.Context().Value(userContextKey).(*api.User)
-		token, err := authService.CreateTemporaryAuthToken(r.Context(), user.ID)
+		userID := r.Context().Value(userContextKey).(string)
+		token, err := authService.CreateTemporaryAuthToken(r.Context(), userID)
 		if err != nil {
 			log.Fatal(err)
 			http.Error(w, "Failed to generate temporary authentication token.", http.StatusInternalServerError)
@@ -100,18 +102,61 @@ func issueAuthTokenMiddleware(next http.Handler, authService api.AuthService) ht
 	}
 }
 
+// *NOTE: when using contexts for user data:
+// A good rule of thumb is that any data required for a function to run should
+// be passed as parameters. Sometimes, for example, it can be useful to keep
+// values such as usernames in context values for use when logging information
+// for later. However, if the username is used to determine if a function should
+// display some specific information, you’d want to include it as a function
+// parameter even if it’s already available from the context. This way when you,
+// or someone else, looks at the function in the future, it’s easier to see
+// which data is actually being used.
+
 func userMiddleware(next http.Handler, userService api.UserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		sessionToken := r.Context().Value(authHeaderContextKey).(string)
+		// sessionToken := r.Context().Value(authHeaderContextKey).(string)
 
-		user, err := userService.UserBySession(sessionToken)
+		// user, err := userService.UserBySession(sessionToken)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// 	http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
+		// 	return
+		// }
+		fmt.Println("user middleware")
+		type userReq struct {
+			UserID string `json:"userid"`
+		}
+
+		var userid userReq
+
+		err := json.NewDecoder(r.Body).Decode(&userid)
 		if err != nil {
+			fmt.Println("Failed to decode user id.")
 			log.Fatal(err)
-			http.Error(w, "Failed to get user info.", http.StatusInternalServerError)
+			http.Error(w, "Failed to decode user id.", http.StatusBadRequest)
 			return
 		}
-		ctx := context.WithValue(r.Context(), userContextKey, user)
+
+		fmt.Println("user id: ", userid.UserID)
+
+		ctx := context.WithValue(r.Context(), userContextKey, userid.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+// context cancellation example
+/*
+ctx := context.Background()
+resultsCh := make(chan *WorkResult)
+
+for {
+	select {
+	case <- ctx.Done():
+		// The context is over, stop processing results
+		return
+	case result := <- resultsCh:
+		// Process the results received
+	}
+}
+*/

@@ -11,6 +11,7 @@ import (
 func HandlePlayerAction(c *realtime.Client, event realtime.Event) {
 
 	switch event.Type {
+		// ? we should use constants for these strings and classify them by event type
 	case "JOIN_LOBBY":
 		// Logic to handle player info
 		fmt.Println("Received join lobby from client:", event.Payload)

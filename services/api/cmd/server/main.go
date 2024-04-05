@@ -21,24 +21,24 @@ import (
 )
 
 func run(ctx context.Context) error {
-	srvConfig := api.HTTPConfig{
-		Host: "localhost",
-		Port: "8081",
-	}
-
 	err := godotenv.Load()
 	if err != nil {
 		return err
 	}
 
+	srvConfig := api.HTTPConfig{
+		Host: os.Getenv("HOST"),
+		Port: os.Getenv("PORT"),
+	}
+
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	pdb := postgres.NewClient("host=localhost port=5432 user=postgres password=mysecretpassword dbname=main sslmode=disable")
+	pdb := postgres.NewClient(os.Getenv("POSTGRES_URI"))
 	defer pdb.Close()
-	rdb := redis.NewClient(ctx, "redis://localhost:6379/0")
+	rdb := redis.NewClient(ctx, os.Getenv("REDIS_URI"))
 	defer rdb.Close()
-	mdb := mongo.NewClient("mongodb://localhost:27017")
+	mdb := mongo.NewClient(os.Getenv("MONGO_URI"))
 	defer func() {
 		if err := mdb.Disconnect(ctx); err != nil {
 			log.Fatal("Failed to disconnect from MongoDB: ", err)
@@ -46,19 +46,13 @@ func run(ctx context.Context) error {
 		}
 	}()
 
-	userRepo := postgres.NewUserRepository(pdb)
-	authRepo := redis.NewAuthRepository(rdb)
-	lobbyRepo := redis.NewLobbyRepository(rdb)
-	setRepo := mongo.NewSetRepository(mdb)
-
-	userService := user.NewService(userRepo)
-	authService := auth.NewService(authRepo)
-	lobbyService := lobby.NewService(lobbyRepo)
-	setService := set.NewService(setRepo)
+	userService := user.NewService(postgres.NewUserRepository(pdb))
+	authService := auth.NewService(redis.NewAuthRepository(rdb))
+	lobbyService := lobby.NewService(redis.NewLobbyRepository(rdb))
+	setService := set.NewService(mongo.NewSetRepository(mdb))
 
 	http.ServeHTTP(ctx, srvConfig, authService, userService, lobbyService, setService)
 
-	// ! idk
 	return nil
 }
 
