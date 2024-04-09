@@ -51,11 +51,11 @@ const QuizHeader = ({
         <div className="grid grid-cols-2 items-start w-full  gap-12 absolute bottom-5 left-0 right-0 px-12 z-20">
           <div className="flex flex-col justify-between gap-0.5">
             <motion.h2 className="text-3xl">{title}</motion.h2>
-            <p className="text-zinc-400  text-sm">{category}</p>
+            <p className="text-zinc-200  text-sm">{category}</p>
           </div>
-          <div className="flex gap-2 max-w-smt ml-auto">
+          {/* <div className="flex gap-2 max-w-smt ml-auto">
             <p className=" text-sm font-light">{description}</p>
-          </div>
+          </div> */}
         </div>
         <div className="relative w-full aspect-[16/6] rounded-t-xl overflow-hidden">
           {isEditing && (
@@ -73,7 +73,7 @@ const QuizHeader = ({
               />
             </div>
           )}
-          <motion.div className="absolute inset-0 z-10 bg-gradient-to-t from-zinc-900 to-transparent"></motion.div>
+          <motion.div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-85"></motion.div>
           <Image
             objectFit="cover"
             alt="preview image"

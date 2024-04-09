@@ -211,11 +211,11 @@ const QuestionList = ({
             <Reorder.Item
               dragListener={isEditing}
               draggable={isEditing}
-              // whileTap={
-              //   isEditing
-              //     ? { cursor: "grabbing", scale: 1.03, zIndex: 1000 }
-              //     : {}
-              // }
+              whileTap={
+                isEditing
+                  ? { cursor: "grabbing", scale: 1.03, zIndex: 1000 }
+                  : {}
+              }
               as="li"
               value={question}
               className={cn("flex flex-col group relative")}

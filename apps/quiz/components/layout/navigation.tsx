@@ -15,22 +15,22 @@ export const Navigation = () => {
         highlight: "from-sky-500",
       },
     },
-    {
-      name: "Play",
-      icon: (props) => <Gamepad2Icon {...props} />,
-      href: "/play",
-      classNames: {
-        icon: "text-violet-500",
-        highlight: "from-violet-500",
-      },
-    },
+    // {
+    //   name: "Play",
+    //   icon: (props) => <Gamepad2Icon {...props} />,
+    //   href: "/play",
+    //   classNames: {
+    //     icon: "text-violet-500",
+    //     highlight: "from-violet-500",
+    //   },
+    // },
     {
       name: "Library",
       icon: (props) => <BookOpenIcon {...props} />,
       href: "/library",
       classNames: {
-        icon: "text-green-500",
-        highlight: "from-green-500",
+        icon: "text-violet-500",
+        highlight: "from-violet-500",
       },
     },
   ];

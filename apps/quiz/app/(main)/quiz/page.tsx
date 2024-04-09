@@ -14,7 +14,8 @@ export default async function Page() {
 
   return (
     <div>
-      <h1>Sets</h1>
+      TODO - IDK what to do here
+      {/* <h1>Sets</h1>
       <QuizForm />
       <ul className="grid grid-cols-4 gap-4">
         {quizzez && quizzez.map((quiz) => (
@@ -27,7 +28,7 @@ export default async function Page() {
             <p className="text-zinc-300">{quiz.meta.description}</p>
           </Link>
         ))}
-      </ul>
+      </ul> */}
     </div>
   );
 }

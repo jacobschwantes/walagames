@@ -1,6 +1,9 @@
 "use client";
 
 import { createQuiz } from "@/actions/quiz";
+import { Button } from "../ui/button";
+import { PushButton } from "../ui/custom-button";
+import { PencilLine } from "lucide-react";
 const sample = {
   meta: {
     title: "Video Game Trivia & History",
@@ -46,7 +49,9 @@ export const QuizForm = () => {
   };
   return (
     <form action={handleCreateQuiz}>
-      <button type="submit">Create</button>
+      <PushButton className="text-sm" color="violet" type="submit">
+       <PencilLine className="h-4 w-4 mr-1"/> Create Quiz
+      </PushButton>
     </form>
   );
 };
