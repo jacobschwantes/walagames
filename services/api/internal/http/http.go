@@ -18,13 +18,13 @@ func ServeHTTP(
 	authService api.AuthService,
 	userService api.UserService,
 	lobbyService api.LobbyService,
-	setService api.SetService,
+	quizService api.QuizService,
 ) error {
 	srv := NewServer(
 		authService,
 		userService,
 		lobbyService,
-		setService,
+		quizService,
 	)
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(config.Host, config.Port),
@@ -58,7 +58,7 @@ func NewServer(
 	authService api.AuthService,
 	userService api.UserService,
 	lobbyService api.LobbyService,
-	setService api.SetService,
+	setService api.QuizService,
 ) *http.Handler {
 	mux := http.NewServeMux()
 
@@ -102,10 +102,33 @@ func addInternalRoutes(
 	// mux.Handle("POST /internal/game/results", internalOnly(gameResultsHandler()) update user data using game results (e.g. history, score, xp, etc)
 }
 
-func addPublicRoutes(mux *http.ServeMux, authService api.AuthService, userService api.UserService, lobbyService api.LobbyService, setService api.SetService) {
-	mux.Handle("/lobby/{code}", userMiddleware(issueAuthTokenMiddleware(lobbyJoinHandler(lobbyService), authService), userService)) // join a lobby
+func addPublicRoutes(mux *http.ServeMux, authService api.AuthService, userService api.UserService, lobbyService api.LobbyService, quizService api.QuizService) {
+	mux.Handle("/lobby", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyJoinHandler(lobbyService), authService), userService))) // join a lobby
 	mux.Handle("/lobby/host", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyHostHandler(), authService), userService))) // create a lobby
 
-	mux.Handle("/set", userMiddleware(setHandler(setService), userService))   // crud for sets, POST ignores id slug, make sure user has access to set
-	mux.Handle("/sets", userMiddleware(setsHandler(setService), userService)) // list sets, gets all sets user has access to
+	mux.Handle("/quiz", quizHandler(quizService))   // crud for sets, POST ignores id slug, make sure user has access to set
+	mux.Handle("/quizzes", quizzesHandler(quizService)) // list sets, gets all sets user has access to
 }
+
+// * allows the use of context values but still take advantage of the type safety of function parameters
+/*
+func main() {
+  mux := http.NewServeMux()
+  mux.HandleFunc("/", homeHandler)
+
+  http.ListenAndServe(":3000", addRequestID(addLogger(mux)))
+}
+
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+  ctx := r.Context()
+  reqID := GetRequestID(ctx)
+  logger := GetLogger(ctx)
+  home(w, r, reqID, logger)
+}
+
+func home(w http.ResponseWriter, r *http.Request, requestID int, logger *Logger) {
+  logger.Println("Here is a log")
+  fmt.Fprintln(w, "Homepage...")
+}
+
+*/

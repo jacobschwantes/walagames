@@ -1,10 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import {
-  BookOpenIcon,
-  HomeIcon,
-  Gamepad2Icon,
-} from "lucide-react";
+import { BookOpenIcon, HomeIcon, Gamepad2Icon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 export const Navigation = () => {
@@ -44,7 +40,11 @@ export const Navigation = () => {
         <NavButton
           route={route}
           key={route.name}
-          active={route.href === pathname}
+          active={
+            route.href === "/"
+              ? route.href === pathname
+              : pathname.includes(route.href)
+          }
         />
       ))}
     </div>
@@ -56,21 +56,30 @@ function NavButton({ route, key, active, ...props }) {
       href={route.href}
       {...props}
       className={cn(
-        " w-full px-4 py-3 rounded-lg relative overflow-hidden flex items-center transition-all duration-300",
-        active && "bg-[#2b303c] brightness-110"
+        " w-full px-4 py-3 rounded-lg relative overflow-hidden flex items-center transition-all duration-300 group",
+        active ? "bg-[#262b35] brightness-110" : "hover:bg-[#21252e]"
       )}
       key={route.name}
     >
       <span
         className={cn(
-          "absolute inset-0 w-2/3 blur-xl bg-gradient-to-r to-transparent opacity-25 transition-all duration-300",
+          "absolute inset-0 w-2/3 blur-xl bg-gradient-to-r to-transparent opacity-25 transition-all duration-300 nav-item-active",
           active && route.classNames.highlight
         )}
       />
       <span className="flex gap-2.5 items-center relative z-10">
         <route.icon className={cn("h-5", route.classNames.icon)} />
 
-        <span className="">{route.name}</span>
+        <span
+          className={cn(
+            "",
+            active
+              ? "text-white"
+              : "text-zinc-300 group-hover:text-white transition-all duration-700"
+          )}
+        >
+          {route.name}
+        </span>
       </span>
     </Link>
   );

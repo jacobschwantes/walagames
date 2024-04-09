@@ -18,7 +18,7 @@ const CastButton = () => {
 
   useEffect(() => {
     const presentationRequest = new PresentationRequest([
-      "http://localhost:3000/present",
+      "http://quizblitz.local:3000/present",
     ]);
 
     // Listen for availability changes

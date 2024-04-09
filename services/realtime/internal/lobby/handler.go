@@ -90,7 +90,7 @@ func Run(lm realtime.LobbyManager, l *realtime.Lobby) {
 				Code:        l.Code,
 				PlayerCount: len(l.Clients),
 				MaxPlayers:  10,
-				HostServer:  "localhost:8080",
+				HostServer:  "localhost:8081",
 			})
 		case client := <-l.Unregister:
 			UnregisterClient(client)

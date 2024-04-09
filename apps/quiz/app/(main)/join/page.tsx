@@ -7,7 +7,7 @@ import { connect } from "http2";
 import type { NextPage } from "next";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import LobbyController from "@/components/set/lobby/lobby-controller";
+import LobbyController from "@/components/lobby/lobby-controller";
 import { getServerSession } from "next-auth";
 
 interface PageProps {

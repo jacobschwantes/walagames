@@ -1,3 +1,4 @@
+import { z } from "zod";
 export enum LobbyEvent {
   INITIAL_STATE = "INITIAL_STATE",
   NEW_MESSAGE = "NEW_MESSAGE",
@@ -27,7 +28,7 @@ export enum PlayerRole {
 
 export type Message = {
   username: string;
-  imageURL?: string
+  imageURL?: string;
   message: string;
   timestamp: number;
 };
@@ -69,57 +70,41 @@ type GameState = {
   };
 };
 
+const QuestionSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  answers: z.array(
+    z.object({
+      id: z.string(),
+      text: z.string(),
+      correct: z.boolean(),
+    })
+  ),
+});
 
+export const QuizFormSchema = z.object({
+  meta: z.object({
+    title: z.string(),
+    description: z.string(),
+    category: z.string(),
+    public: z.boolean(),
+    image_src: z.string(),
+  }),
+  questions: z.array(QuestionSchema),
+});
 
+export type QuizForm = z.infer<typeof QuizFormSchema>;
 
-export type SetVisibility = "public" | "private" | "collaborators" | "friends";
+export type Question = z.infer<typeof QuestionSchema>;
 
-
-export type SetCompletionStatus = {
-  completed: number;
-  total: number;
-  in_progress: boolean;
-};
-
-
-export type TermTag = {
-  id: string;
-  tag: string;
-};
-
-
-export type Term = {
-  id: string;
-  owner_id: string;
-  term: string;
-  definition: string;
-  tags: TermTag[];
-  last_activity_at: Date;
-  created_at: Date;
-  updated_at: Date;
-};
-
-
-export type SetTag = {
-  id: string;
-  tag: string;
-};
-
-
-export type Set = {
+export type Quiz = QuizForm & {
   id: string;
   owner_id: string;
-  collaborators: string[];
-  name: string;
-  description: string;
-  image_url: string;
-  tags: SetTag[];
-  terms: Term[];
-  visibility: SetVisibility;
-  version: string;
-  last_activity_at: Date;
-  created_at: Date;
-  updated_at: Date;
-  likes: number;
-  completion_status: SetCompletionStatus;
+  created_at: string;
+  updated_at: string;
+  stats: {
+    plays: number;
+    stars: number;
+    // rating: number;
+  };
 };

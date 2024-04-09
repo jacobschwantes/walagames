@@ -38,21 +38,22 @@ export const authOptions = {
           email: profile.email,
           name: profile?.preferred_username,
           image: profile?.picture,
+          roles: profile?.roles,
         };
       },
     }),
   ],
   callbacks: {
-    async session({ session, token }) {
-
+    async session({ session, token, profile }) {
       if (session.user) {
         session.user.id = token.sub;
+        session.user.roles = token.roles;
       }
 
       return session;
     },
 
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }) {
       // console.log("jwt token", token);
       if (account) {
         console.log("INTIAL LOGIN, SAVING TOKENS IN JWT");
@@ -61,10 +62,11 @@ export const authOptions = {
           access_token: account.access_token,
           expires_at: account.expires_at,
           refresh_token: account.refresh_token,
+          roles: profile.roles,
           ...token,
         };
       }
-      console.log("token", token)
+      // console.log("token", token)
       return token;
     },
   },

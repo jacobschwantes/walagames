@@ -54,3 +54,34 @@ export const createLobby = async (): Promise<LobbyResponse> => {
 // Need to figure out a better system that deduplicates logic
 // Including system for handling the migration to the lobby each a host vs join case
 // /lobby for actual lobby with /join?code= or /host
+
+export const joinLobby = async (code: string): Promise<LobbyResponse> => {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user.id) {
+    console.error("no session");
+    return { error: "no session" };
+  }
+
+  try {
+    const response = await fetch(`${process.env.API_ENDPOINT}/lobby`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.API_KEY}`,
+      },
+      body: JSON.stringify({
+        userid: session.user.id,
+        code,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Unknown error");
+    }
+    return data;
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

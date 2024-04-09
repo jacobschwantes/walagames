@@ -124,8 +124,10 @@ func (lm *lobbyManager) lobbyStatePusher() {
 
 	for {
 		<-ticker.C
-		fmt.Println("Pushing lobby state updates")
 		updates := lm.updateQueue.PopAllUpdates()
+		if len(updates) > 0 {
+			fmt.Println("Pushing lobby state updates")
+		}
 		for _, update := range updates {
 			fmt.Println("Pushing lobby state update for lobby:", update.Code)
 			fmt.Println("Update:", update)

@@ -51,12 +51,11 @@ func handleTokenValidation(authService api.AuthService, userService api.UserServ
 			fmt.Println(response.User.Email)
 			fmt.Println(response.User.FirstName)
 			fmt.Println(response.User.LastName)
-			
 
 			var user = &api.User{
 				ID:    userID,
 				Email: &response.User.Email,
-				Name: &response.User.FullName,
+				Name:  &response.User.FullName,
 				Image: &response.User.ImageUrl,
 			}
 
@@ -91,6 +90,16 @@ func lobbyCreateHandler(lobbyService api.LobbyService) http.HandlerFunc {
 		code, err := lobbyService.GenerateUniqueLobbyCode(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to generate lobby code.", http.StatusInternalServerError)
+			return
+		}
+
+		err = lobbyService.SaveLobbyState(r.Context(), code, api.LobbyMetadata{Code: code,
+			HostServer:  "localhost:8081",
+			MaxPlayers:  4,
+			PlayerCount: 0,
+		})
+		if err != nil {
+			http.Error(w, "Failed to save lobby state.", http.StatusInternalServerError)
 			return
 		}
 

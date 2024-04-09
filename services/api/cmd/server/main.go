@@ -16,7 +16,7 @@ import (
 	"github.com/jacobschwantes/quizblitz/services/api/internal/mongo"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/postgres"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/redis"
-	"github.com/jacobschwantes/quizblitz/services/api/internal/set"
+	"github.com/jacobschwantes/quizblitz/services/api/internal/quiz"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/user"
 )
 
@@ -49,7 +49,7 @@ func run(ctx context.Context) error {
 	userService := user.NewService(postgres.NewUserRepository(pdb))
 	authService := auth.NewService(redis.NewAuthRepository(rdb))
 	lobbyService := lobby.NewService(redis.NewLobbyRepository(rdb))
-	setService := set.NewService(mongo.NewSetRepository(mdb))
+	setService := quiz.NewService(mongo.NewSetRepository(mdb))
 
 	http.ServeHTTP(ctx, srvConfig, authService, userService, lobbyService, setService)
 

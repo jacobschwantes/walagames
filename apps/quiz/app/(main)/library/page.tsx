@@ -3,7 +3,7 @@ export default function Page() {
   return (
     <div>
           <h1>Page</h1>
-          <Link href="/library/sets">sets</Link>
+          <Link href="/library/quiz">Quizzes</Link>
     </div>
   );
 }

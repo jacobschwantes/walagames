@@ -18,6 +18,27 @@ type contextKey string
 const authHeaderContextKey contextKey = "authHeader"
 const authTokenContextKey contextKey = "authToken"
 const userContextKey contextKey = "userID"
+const codeContextKey contextKey = "code"
+// * good practice for using context keys
+/*
+type userCtxKeyType string
+
+const userCtxKey userCtxKeyType = "user"
+
+func WithUser(ctx context.Context, user *User) context.Context {
+  return context.WithValue(ctx, userCtxKey, user)
+}
+
+func GetUser(ctx context.Context) *User {
+  user, ok := ctx.Value(userCtxKey).(*User)
+  if !ok {
+    // Log this issue
+    return nil
+  }
+  return user
+}
+
+*/
 
 func internalOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -126,11 +147,12 @@ func userMiddleware(next http.Handler, userService api.UserService) http.Handler
 		fmt.Println("user middleware")
 		type userReq struct {
 			UserID string `json:"userid"`
+			Code   string `json:"code"`
 		}
 
-		var userid userReq
+		var request userReq
 
-		err := json.NewDecoder(r.Body).Decode(&userid)
+		err := json.NewDecoder(r.Body).Decode(&request)
 		if err != nil {
 			fmt.Println("Failed to decode user id.")
 			log.Fatal(err)
@@ -138,9 +160,13 @@ func userMiddleware(next http.Handler, userService api.UserService) http.Handler
 			return
 		}
 
-		fmt.Println("user id: ", userid.UserID)
+		fmt.Println("user id: ", request.UserID)
 
-		ctx := context.WithValue(r.Context(), userContextKey, userid.UserID)
+		ctx := context.WithValue(r.Context(), userContextKey, request.UserID)
+
+		if request.Code != "" {
+			ctx = context.WithValue(ctx, codeContextKey, request.Code)
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

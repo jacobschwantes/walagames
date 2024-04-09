@@ -3,7 +3,7 @@ import type { NextPage } from "next";
 
 import {  authOptions } from "@/auth";
 
-import LobbyController from "@/components/set/lobby/lobby-controller";
+import LobbyController from "@/components/lobby/lobby-controller";
 import { getServerSession } from "next-auth";
 
 interface PageProps {}

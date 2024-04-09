@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/ip2location/ip2location-go/v9"
 	api "github.com/jacobschwantes/quizblitz/services/api/internal"
@@ -100,15 +101,13 @@ func ipToCoordinates(ip string) (lat float64, long float64, err error) {
 
 // todo: refactor this
 func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
-	type lobbyJoinRequest struct {
-		Code string `json:"code"`
-	}
+
 	type lobbyJoinResponse struct {
-		Code   string `json:"code"`
+		// Code   string `json:"code"`
 		Server string `json:"server"`
-		Meta   struct {
-			MaxPlayers int `json:"max_players"`
-		} `json:"meta"`
+		// Meta   struct {
+		// 	MaxPlayers int `json:"max_players"`
+		// } `json:"meta"`
 		Token string `json:"token,omitempty"`
 	}
 
@@ -116,19 +115,21 @@ func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Content-Type", "application/json")
 
 		switch r.Method {
 		case http.MethodOptions:
 			w.WriteHeader(http.StatusOK)
 		case http.MethodPost:
 			authToken := r.Context().Value(authTokenContextKey).(string)
-			lobbyCode := r.PathValue("code")
-			if lobbyCode == "" {
+			code := r.Context().Value(codeContextKey).(string)
+
+			if code == "" {
 				http.Error(w, "Lobby code is required.", http.StatusBadRequest)
 				return
 			}
 
-			lobbyData, err := lobbyService.GetLobbyState(r.Context(), lobbyCode)
+			lobbyData, err := lobbyService.GetLobbyState(r.Context(), code)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to get lobby data.", http.StatusInternalServerError)
@@ -136,13 +137,13 @@ func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
 			}
 
 			resp := &lobbyJoinResponse{
-				Code:   lobbyData.Code,
+				// Code:   lobbyData.Code,
 				Server: lobbyData.HostServer,
-				Meta: struct {
-					MaxPlayers int `json:"max_players"`
-				}{
-					MaxPlayers: lobbyData.MaxPlayers,
-				},
+				// Meta: struct {
+				// 	MaxPlayers int `json:"max_players"`
+				// }{
+				// 	MaxPlayers: lobbyData.MaxPlayers,
+				// },
 			}
 
 			if authToken != "" {
@@ -205,23 +206,35 @@ func lobbyHostHandler() http.HandlerFunc {
 	}
 }
 
-func setsHandler(setService api.SetService) http.HandlerFunc {
+func quizzesHandler(qs api.QuizService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
+		
 		switch r.Method {
 		case http.MethodOptions:
 			w.WriteHeader(http.StatusOK)
 		case http.MethodGet:
-			user := r.Context().Value(userContextKey).(*api.User)
-			sets, err := setService.Sets(string(user.ID))
+			userID := r.URL.Query().Get("user_id")
+			if userID == "" {
+				http.Error(w, "User ID is required.", http.StatusBadRequest)
+				return
+			}
+			sets, err := qs.Quizzes(string(userID))
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to get sets.", http.StatusInternalServerError)
 				return
 			}
+
+			// type quizResponse struct {
+			// 	data []*api.Quiz
+			// }
+
+			// res := quizResponse{
+			// 	data: sets,
+			// }
 
 			jsonData, err := json.Marshal(sets)
 			if err != nil {
@@ -238,25 +251,36 @@ func setsHandler(setService api.SetService) http.HandlerFunc {
 	}
 }
 
-func setHandler(setService api.SetService) http.HandlerFunc {
+func quizHandler(qs api.QuizService) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
+		userID := r.URL.Query().Get("user_id")
+		if userID == "" {
+			http.Error(w, "User ID is required.", http.StatusBadRequest)
+			return
+		}
 		switch r.Method {
 		case http.MethodOptions:
 			w.WriteHeader(http.StatusOK)
 		case http.MethodGet:
-			setID := r.URL.Query().Get("id")
-			set, err := setService.Set(setID)
+			quizID := r.URL.Query().Get("id")
+			quiz, err := qs.Quiz(quizID)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to get set.", http.StatusInternalServerError)
 				return
 			}
 
-			jsonData, err := json.Marshal(set)
+			if quiz.OwnerID != userID {
+				http.Error(w, "Unauthorized.", http.StatusUnauthorized)
+				return
+			}
+
+			jsonData, err := json.Marshal(quiz)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to marshal set.", http.StatusInternalServerError)
@@ -266,17 +290,26 @@ func setHandler(setService api.SetService) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			w.Write(jsonData)
 		case http.MethodPost:
-			var set api.Set
-			if err := json.NewDecoder(r.Body).Decode(&set); err != nil {
+			var quiz api.Quiz
+			if err := json.NewDecoder(r.Body).Decode(&quiz); err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to decode set.", http.StatusBadRequest)
 				return
 			}
 
-			user := r.Context().Value(userContextKey).(*api.User)
-			set.OwnerID = user.ID
+			// user := r.Context().Value(userContextKey).(*api.User)
+			quiz.OwnerID = userID
 
-			err := setService.CreateSet(set)
+			quiz.Stats = api.QuizStats{
+				Plays: 0,
+				Stars: 0,
+				// Rating: 0,
+			}
+			now := time.Now()
+			quiz.CreatedAt = now
+			quiz.UpdatedAt = now
+
+			err := qs.CreateQuiz(quiz)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to create set.", http.StatusInternalServerError)
@@ -284,6 +317,39 @@ func setHandler(setService api.SetService) http.HandlerFunc {
 			}
 
 			w.WriteHeader(http.StatusCreated)
+		case http.MethodPut:
+			var quizReq api.Quiz
+			quizID := r.URL.Query().Get("id")
+			if err := json.NewDecoder(r.Body).Decode(&quizReq); err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to decode set.", http.StatusBadRequest)
+				return
+			}
+
+			quiz, err := qs.Quiz(quizID)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Quiz does not exist.", http.StatusInternalServerError)
+				return
+			}
+
+			if quiz.OwnerID != userID {
+				http.Error(w, "Unauthorized.", http.StatusUnauthorized)
+				return
+			}
+
+			quiz.UpdatedAt = time.Now()
+			quiz.Meta = quizReq.Meta
+			quiz.Questions = quizReq.Questions
+			
+
+
+			err = qs.UpdateQuiz(quizID, *quiz)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to update set.", http.StatusInternalServerError)
+				return
+			}
 		default:
 			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
 		}

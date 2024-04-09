@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "../../ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { twMerge } from "tailwind-merge";
 
 

@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { twMerge } from "tailwind-merge";
 import { CountdownTimer } from "./timer";
-import ChatWindow from "../set/lobby/chat-window";
+import ChatWindow from "../lobby/chat-window";
 import { Scoreboard } from "./scoreboard";
 
 interface WebSocketClientProps {

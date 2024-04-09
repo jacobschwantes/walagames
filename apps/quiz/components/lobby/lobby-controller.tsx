@@ -8,9 +8,9 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import GameClient from "../../game/game-client";
-import { Button } from "../../ui/button";
-import { createLobby } from "@/actions/lobby";
+import GameClient from "../game/game-client";
+import { Button } from "../ui/button";
+import { createLobby, joinLobby } from "@/actions/lobby";
 interface JoinLobbyControllerProps {
   user: User;
   isHost?: boolean;
@@ -20,29 +20,17 @@ const LobbyController = ({ user, isHost }: JoinLobbyControllerProps) => {
   const [connectionStr, setConnectionStr] = useState("");
   const [lobbyState, sendEvent] = useLobby(connectionStr, username);
   const [code, setCode] = useState("");
+
   const handleJoinLobby = async () => {
     if (user) {
-      const { server, meta, token } = await fetch(
-        "/api/lobby/join?code=" + code.toUpperCase(),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      )
-        .then((res) => res.json())
-        .catch((e) => {
-          toast.error("Failed to join lobby. Please try again.");
-        });
-
-      setConnectionStr(
-        `ws://${server}/lobby/connect?code=${code.toUpperCase()}&token=${token}`
-      );
-    } else {
-      setConnectionStr(
-        `ws://localhost:8080/lobby/connect?code=${code.toUpperCase()}`
-      );
+      const response = await joinLobby(code);
+      if ('error' in response) {
+        console.error(response.error);
+        toast.error("Failed to join lobby. Please try again.");
+        return;
+      }
+      const { server, token } = response;
+      setConnectionStr(`ws://${server}/lobby/connect?token=${token}&code=${code}`);
     }
   };
 
@@ -55,6 +43,7 @@ const LobbyController = ({ user, isHost }: JoinLobbyControllerProps) => {
     }
 
     const { server, token } = response;
+    console.log("server", server);
     setConnectionStr(`ws://${server}/lobby/connect?token=${token}`);
   };
 
@@ -94,7 +83,7 @@ function LobbyCodeInput({ code, setCode, onComplete }: LobbyCodeInputProps) {
   return (
     <InputOTP
       value={code}
-      onChange={(value) => setCode(value)}
+      onChange={(value) => setCode(value.toUpperCase())}
       onComplete={onComplete}
       inputMode="text"
       autoFocus

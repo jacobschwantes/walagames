@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/jacobschwantes/quizblitz/services/api/internal"
@@ -98,6 +99,7 @@ func (lr *lobbyRepository) GetLobbyMetadata(ctx context.Context, code string) (*
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("meta data: ", metadata)
 
 	lobbyMetadata := &api.LobbyMetadata{
 		PlayerCount: playerCount,
