@@ -18,7 +18,7 @@ export default async function Page() {
 
   return (
     <div className=" w-full mx-auto h-full flex flex-col gap-5 ">
-      <AnimatedContainer>
+      <AnimatedContainer direction="down">
         <ScrollArea className=" h-[99vh] max-w-[1400px] mx-auto w-full px-5">
           <div className="flex justify-between sticky top-0 z-50 p-2 pt-4 bg-[#1a1e24]">
             <h1 className="text-2xl">My Library</h1>
@@ -28,7 +28,7 @@ export default async function Page() {
             {quizList &&
               quizList.map((quiz) => (
                 <Link
-                  className="w-full flex flex-col  bg-[#242a32] rounded-xl  hover:-translate-y-1 hover:scale-[1.02] transition-all ease-out duration-300 group "
+                  className="w-full flex flex-col  bg-[#242a32] rounded-xl  hover:-translate-y-0.5 hover:scale-[1.01] transition-all ease-out duration-300 group "
                   href={`/quiz/${quiz.id}`}
                   key={quiz.id}
                 >

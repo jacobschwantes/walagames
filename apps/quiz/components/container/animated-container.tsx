@@ -1,9 +1,9 @@
 "use client";
 import { motion } from "framer-motion";
-const AnimatedContainer = ({ children }) => {
+const AnimatedContainer = ({ children, direction = "up" }) => {
   return (
     <motion.div
-      initial={{ y: 10, opacity: 0 }}
+      initial={{ y: direction === "up" ? 3 : -3, opacity: 0 }}
       transition={{ duration: 0.3, ease: [0, 0.71, 0.2, 1.01] }}
       animate={{ y: 0, opacity: 1 }}
     >

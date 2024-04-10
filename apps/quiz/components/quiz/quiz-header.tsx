@@ -73,7 +73,7 @@ const QuizHeader = ({
               />
             </div>
           )}
-          <motion.div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-85"></motion.div>
+          <motion.div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-75"></motion.div>
           <Image
             objectFit="cover"
             alt="preview image"
