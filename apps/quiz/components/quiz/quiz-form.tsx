@@ -4,6 +4,7 @@ import { createQuiz } from "@/actions/quiz";
 import { Button } from "../ui/button";
 import { PushButton } from "../ui/custom-button";
 import { PencilLine } from "lucide-react";
+import { redirect } from "next/navigation";
 const sample = {
   meta: {
     title: "Video Game Trivia & History",
@@ -46,11 +47,12 @@ export const QuizForm = () => {
   const handleCreateQuiz = async () => {
     const res = await createQuiz(sample);
     console.log(res);
+    redirect(`/quiz/${res.id}`);
   };
   return (
     <form action={handleCreateQuiz}>
       <PushButton className="text-sm" color="violet" type="submit">
-       <PencilLine className="h-4 w-4 mr-1"/> Create Quiz
+       <PencilLine className="h-4 w-4 mr-1"/> Create
       </PushButton>
     </form>
   );

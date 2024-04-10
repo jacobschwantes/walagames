@@ -60,13 +60,18 @@ func (repo *quizRepository) Quizzes(userid string) ([]*api.Quiz, error) {
 	return quizzes, nil
 }
 
-func (repo *quizRepository) InsertQuiz(quiz api.Quiz) error {
+func (repo *quizRepository) InsertQuiz(quiz api.Quiz) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	collection := repo.db.Database("quizblitz").Collection("quiz")
 	res, err := collection.InsertOne(ctx, quiz)
-	fmt.Println("Inserted quiz: ", res)
-	return err
+	if err != nil {
+		fmt.Println("Error inserting quiz: ", err)
+		return "", err
+	}
+	insertedID := res.InsertedID.(primitive.ObjectID).Hex()
+	fmt.Println("Inserted quiz: ", insertedID)
+	return insertedID, err
 }
 
 func (repo *quizRepository) UpdateQuiz(id string, quiz api.Quiz) error {

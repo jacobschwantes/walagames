@@ -46,13 +46,13 @@ const (
 type QuizRepository interface {
 	Quiz(id string) (*Quiz, error)
 	Quizzes(userId string) ([]*Quiz, error)
-	InsertQuiz(Quiz Quiz) error
+	InsertQuiz(Quiz Quiz) (string, error)
 	UpdateQuiz(id string, Quiz Quiz) error
 }
 
 type QuizService interface {
 	Quiz(id string) (*Quiz, error)
 	Quizzes(userId string) ([]*Quiz, error)
-	CreateQuiz(quiz Quiz) error
+	CreateQuiz(quiz Quiz) (string, error)
 	UpdateQuiz(id string, quiz Quiz) error
 }

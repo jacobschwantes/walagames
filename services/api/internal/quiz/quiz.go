@@ -20,7 +20,7 @@ func (qs *quizService) Quizzes(userid string) ([]*api.Quiz, error) {
 	return qs.repo.Quizzes(userid)
 }
 
-func (qs *quizService) CreateQuiz(quiz api.Quiz) error {
+func (qs *quizService) CreateQuiz(quiz api.Quiz) (string, error) {
 	return qs.repo.InsertQuiz(quiz)
 }
 

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { Quiz, QuizForm, QuizFormSchema } from "@/lib/types";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 type ErrorResponse = {
   error: string;
@@ -56,11 +57,16 @@ export const createQuiz = async (
         }),
       }
     );
+
     const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Unknown error");
-    }
+    console.log("createQuiz", data);
+
+    revalidatePath("/library");
     return data;
+    // if (!response.ok) {
+    //   throw new Error(data.error || "Unknown error");
+    // }
+    // return data;
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",
@@ -190,7 +196,7 @@ export const updateQuiz = async (
     if (!response.ok) {
       throw new Error(data.error || "Unknown error");
     }
-    
+
     return data;
   } catch (error) {
     return {

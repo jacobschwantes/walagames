@@ -309,14 +309,30 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 			quiz.CreatedAt = now
 			quiz.UpdatedAt = now
 
-			err := qs.CreateQuiz(quiz)
+			id, err := qs.CreateQuiz(quiz)
 			if err != nil {
 				log.Fatal(err)
 				http.Error(w, "Failed to create set.", http.StatusInternalServerError)
 				return
 			}
 
+			type quizResponse struct {
+				ID string `json:"id"`
+			}
+
+			resp := quizResponse{
+				ID: id,
+			}
+
+			jsonData, err := json.Marshal(resp)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Failed to marshal set.", http.StatusInternalServerError)
+				return
+			}
+
 			w.WriteHeader(http.StatusCreated)
+			w.Write(jsonData)
 		case http.MethodPut:
 			var quizReq api.Quiz
 			quizID := r.URL.Query().Get("id")
