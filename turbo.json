@@ -11,6 +11,12 @@
             "outputs": [
                 ".next/**",
                 "!.next/cache/**"
+            ],
+            "env": [
+                "ZIPLINE_ACCESS_TOKEN",
+                "ZIPLINE_API_ENDPOINT",
+                "API_KEY",
+                "API_ENDPOINT"
             ]
         },
         "lint": {

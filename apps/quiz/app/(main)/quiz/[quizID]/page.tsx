@@ -2,6 +2,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AnimatedContainer } from "@/components/container/animated-container";
 import { fetchQuizById } from "@/actions/quiz";
 import QuizPage from "@/components/quiz/quiz";
+import { redirect } from "next/navigation";
 
 export default async function Page({ params }: { params: { quizID: string } }) {
   // const session = await getServerSession(authOptions);
@@ -10,7 +11,7 @@ export default async function Page({ params }: { params: { quizID: string } }) {
 
   const res = await fetchQuizById(quizID);
   if ("error" in res) {
-    return <div>{res.error}</div>;
+    redirect("/library");
   }
 
   return (

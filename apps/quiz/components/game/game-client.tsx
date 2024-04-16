@@ -48,8 +48,11 @@ const GameClient: React.FC<WebSocketClientProps> = ({
   useEffect(() => {
     if (lobbyState.exited) {
       onClose();
+    
     }
   }, [lobbyState.exited, onClose]);
+
+
 
   return (
     <div className="flex-1 flex flex-col justify-between h-full w-full gap-2 p-6 ">
@@ -59,7 +62,7 @@ const GameClient: React.FC<WebSocketClientProps> = ({
         <div className="flex w-full justify-between">
           <h2 className="text-2xl font-medium">
             Round {lobbyState.gameState.state?.currentRound} of{" "}
-            {lobbyState.gameState.settings?.totalRounds}
+            {lobbyState.gameState.settings.totalRounds}
           </h2>
           <GearIcon className="h-7 w-7 text-zinc-900" />
         </div>
@@ -72,34 +75,34 @@ const GameClient: React.FC<WebSocketClientProps> = ({
           </div>
           <Scoreboard lobbyState={lobbyState} username={username} role={role} />
         </div>
-        {lobbyState.gameState.state?.question ? (
+        {lobbyState.gameState.state?.question.question ? (
           <div className="flex-1 border rounded-lg flex flex-col gap-16 justify-between p-6">
             <div className="flex-1 flex flex-col  items-center gap-6">
               <div className=" flex flex-col justify-center h-16">
                 <CountdownTimer
-                  targetDate={lobbyState.gameState.state.expiration}
+                  targetDate={lobbyState.gameState.state.deadline}
                 />
               </div>
               <div className="w-full aspect-video border mx-auto flex items-center justify-center rounded-lg shadow-lg shadow-zinc-100 border-zinc-100">
                 <h2 className="text-3xl font-medium">
-                  {lobbyState.gameState.state?.question}
+                  {lobbyState.gameState.state?.question.question}
                 </h2>
               </div>
             </div>
             <div className="grid gap-2 grid-cols-2">
-              {lobbyState.gameState.state?.answers.map((answer, index) => (
+              {lobbyState.gameState.state?.question.answers.map((answer, index) => (
                 <Button
                   disabled={submittedAnswer !== ""}
                   key={answer}
-                  onClick={() => submitAnswer(answer)}
+                  onClick={() => submitAnswer(answer.text)}
                   className={twMerge(
                     "h-16 hover:bg-black hover:text-white transition-colors duration-200",
-                    answer === submittedAnswer
+                    answer.text === submittedAnswer
                       ? "bg-black text-white"
                       : "bg-zinc-100 text-black"
                   )}
                 >
-                  {answer}
+                  {answer.text}
                 </Button>
               ))}
             </div>

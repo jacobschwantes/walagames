@@ -19,7 +19,7 @@ type lobbyManager struct {
 }
 
 const (
-	MAX_LOBBIES      = 5
+	MAX_LOBBIES      = 20
 	LOBBY_TIMEOUT    = 15 * time.Minute
 	CLEANUP_INTERVAL = 5 * time.Minute
 )
@@ -34,12 +34,17 @@ func NewManager(c realtime.APIClient) realtime.LobbyManager {
 	return lm
 }
 
-func (ls *lobbyManager) CreateLobby(code string) (*realtime.Lobby, error) {
-	if len(ls.repo.Lobbies()) >= ls.maxLobbies {
+func (ls *lobbyManager) CreateLobby(code string, quizID string) (*realtime.Lobby, error) {
+	lobbyCount := len(ls.repo.Lobbies())
+	fmt.Println("current lobby count: ", lobbyCount)
+
+	if lobbyCount >= ls.maxLobbies {
+		fmt.Println("max lobbies reached")
 		return nil, fmt.Errorf("max lobbies reached")
 	}
 
-	lobby, err := realtime.NewLobby(code)
+	fmt.Println("About to create new lobby")
+	lobby, err := realtime.NewLobby(code, quizID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +54,14 @@ func (ls *lobbyManager) CreateLobby(code string) (*realtime.Lobby, error) {
 		return nil, err
 	}
 
+	quiz, err := ls.api.FetchQuiz(quizID)
+	if err != nil {
+		fmt.Println("failed to fetch quiz")
+		return nil, err
+	}
+
+	lobby.Quiz = quiz
+
 	go Run(ls, lobby)
 	fmt.Println("Created lobby with code:", code)
 	return lobby, nil
@@ -56,15 +69,18 @@ func (ls *lobbyManager) CreateLobby(code string) (*realtime.Lobby, error) {
 
 func (ls *lobbyManager) CloseLobby(code string, message string) error {
 	if lobby, err := ls.repo.Lobby(code); err == nil {
-		lobby.Game.Control <- "END_GAME"
+		// lobby.Game.Control <- "END_GAME"
 		for c := range lobby.Clients {
 			close(c.Close)
 		}
-
+		fmt.Println("about to close lobby with code: ", code)
 		err = ls.repo.DeleteLobby(code)
 		if err != nil {
+			fmt.Println("failed to delete lobby")
 			return err
 		}
+
+		fmt.Println("lobby count after close: ", len(ls.repo.Lobbies()))
 
 		return nil
 	}

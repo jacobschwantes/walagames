@@ -135,9 +135,18 @@ func (c *apiClient) PushLobbyStateUpdate(state realtime.LobbyStateUpdate) error 
 	return nil
 }
 
-func (c *apiClient) FetchSetData(setID int) (*realtime.SetData, error) {
-	url := fmt.Sprintf("%s/sets/%d", c.BaseURL, setID)
-	resp, err := c.HTTPClient.Get(url)
+func (c *apiClient) FetchQuiz(id string) (*realtime.Quiz, error) {
+	url := fmt.Sprintf("%s/quiz?id=%s", c.BaseURL, id)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println("failed to create request for fetching quiz")
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", c.AuthToken)
+
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -147,12 +156,12 @@ func (c *apiClient) FetchSetData(setID int) (*realtime.SetData, error) {
 		return nil, fmt.Errorf("API returned non-200 status code: %d", resp.StatusCode)
 	}
 
-	var setData realtime.SetData
-	if err := json.NewDecoder(resp.Body).Decode(&setData); err != nil {
+	var quiz realtime.Quiz
+	if err := json.NewDecoder(resp.Body).Decode(&quiz); err != nil {
 		return nil, err
 	}
 
-	return &setData, nil
+	return &quiz, nil
 }
 
 func encode[T any](w http.ResponseWriter, r *http.Request, status int, v T) error {
@@ -171,6 +180,7 @@ func decode[T any](r *http.Request) (T, error) {
 	}
 	return v, nil
 }
+
 // err := encode(w, r, http.StatusOK, obj)
 // decoded, err := decode[CreateSomethingRequest](r)
 
@@ -180,7 +190,7 @@ func decode[T any](r *http.Request) (T, error) {
 // - numbers are within a certain range
 
 // more complicated things like looking up values in a database should happen elsewhere
-// these checks are too important to happen in a simple generalized validator and you wouldnt 
+// these checks are too important to happen in a simple generalized validator and you wouldnt
 // expect to find these checks in a function like this as it could be easily hidden away
 
 func decodeValid[T Validator](r *http.Request) (T, map[string]string, error) {
@@ -197,5 +207,6 @@ func decodeValid[T Validator](r *http.Request) (T, map[string]string, error) {
 type Validator interface {
 	Valid(ctx context.Context) (problems map[string]string)
 }
-// The Valid method takes a context (which is optional but has been useful for me in the past) and returns a map. 
+
+// The Valid method takes a context (which is optional but has been useful for me in the past) and returns a map.
 // If there is a problem with a field, its name is used as the key, and a human-readable explanation of the issue is set as the value.

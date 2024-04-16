@@ -7,6 +7,10 @@ import (
 
 type Lobby struct {
 	ID int `json:"id,omitempty"`
+
+	QuizID string
+
+	Quiz *Quiz
 	// Registered clients
 	Clients map[*Client]bool
 
@@ -36,18 +40,19 @@ func generateLobbyID() (int, error) {
 	return int(b[0]) + int(b[1])<<8 + int(b[2])<<16 + int(b[3])<<24, nil
 }
 
-func NewLobby(code string) (*Lobby, error) {
+func NewLobby(code string, quizID string) (*Lobby, error) {
 	id, err := generateLobbyID()
 	if err != nil {
 		return nil, err
 	}
 	return &Lobby{
-		ID:         id,
-		Broadcast:  make(chan []byte),
-		Register:   make(chan *Client),
-		Unregister: make(chan *Client),
-		Clients:    make(map[*Client]bool),
-		Code:       code,
+		ID:           id,
+		QuizID:       quizID,
+		Broadcast:    make(chan []byte),
+		Register:     make(chan *Client),
+		Unregister:   make(chan *Client),
+		Clients:      make(map[*Client]bool),
+		Code:         code,
 		LastActivity: time.Now(),
 	}, nil
 }
@@ -61,7 +66,7 @@ type LobbyState struct {
 
 type LobbyManager interface {
 	Lobby(code string) (*Lobby, error)
-	CreateLobby(code string) (*Lobby, error)
+	CreateLobby(code string, quizID string) (*Lobby, error)
 	CloseLobby(code string, message string) error
 	PushLobbyStateUpdate(update LobbyStateUpdate)
 }

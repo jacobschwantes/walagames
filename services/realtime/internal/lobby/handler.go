@@ -11,7 +11,7 @@ import (
 func HandlePlayerAction(c *realtime.Client, event realtime.Event) {
 
 	switch event.Type {
-		// ? we should use constants for these strings and classify them by event type
+	// ? we should use constants for these strings and classify them by event type
 	case "JOIN_LOBBY":
 		// Logic to handle player info
 		fmt.Println("Received join lobby from client:", event.Payload)
@@ -80,11 +80,12 @@ func HandlePlayerAction(c *realtime.Client, event realtime.Event) {
 
 func Run(lm realtime.LobbyManager, l *realtime.Lobby) {
 	// gs := game.NewGameService()
-	l.Game = realtime.NewGame("default", 10, 10)
+	l.Game = realtime.NewGame("default", len(l.Quiz.Questions), 10)
 
 	for {
 		select {
 		case client := <-l.Register:
+			fmt.Println("register called")
 			RegisterClient(client)
 			lm.PushLobbyStateUpdate(realtime.LobbyStateUpdate{
 				Code:        l.Code,
@@ -93,15 +94,23 @@ func Run(lm realtime.LobbyManager, l *realtime.Lobby) {
 				HostServer:  "localhost:8081",
 			})
 		case client := <-l.Unregister:
-			UnregisterClient(client)
-
-			if len(l.Clients) == 0 {
+			// ! I think all of this is prone to race conditions and thread safety issues
+			// ! Need to use mutex on this shared state
+			fmt.Println("unregister called")
+			if len(l.Clients) == 1 {
+				fmt.Printf("No users left so lobby %s was closed\n", l.Code)
 				lm.CloseLobby(l.Code, "Empty lobby")
-				fmt.Printf("No users left so lobby %s was closed", l.Code)
+				return
+			} else {
+				fmt.Println("lobby client count:", len(l.Clients))
 			}
+
+			UnregisterClient(client)
+			
 			if client.PlayerInfo.Role == realtime.RoleHost {
 				MigrateHost(lm, l)
 			}
+
 			players := GetPlayerList(l)
 			playerList, _ := json.Marshal(&realtime.Event{Type: "PLAYER_LIST", Payload: players})
 

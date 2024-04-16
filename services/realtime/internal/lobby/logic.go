@@ -15,35 +15,23 @@ const (
 
 func StartGame(l *realtime.Lobby) {
 
-	l.Game = realtime.NewGame("default", 10, 10)
-	// Logic to start game
-	type Question struct {
-		Question      string
-		Answers       []string
-		CorrectAnswer string
-	}
-	questionBank := []Question{
-		{Question: "What is the capital of France?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Paris"},
-		{Question: "What is the capital of Germany?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Berlin"},
-		{Question: "What is the capital of Spain?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Madrid"},
-		{Question: "What is the capital of Italy?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Rome"},
-		{Question: "What is the capital of Portugal?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Lisbon"},
-		{Question: "What is the capital of Greece?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Athens"},
-		{Question: "What is the capital of Poland?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Warsaw"},
-		{Question: "What is the capital of Sweden?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Stockholm"},
-		{Question: "What is the capital of Norway?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Oslo"},
-		{Question: "What is the capital of Finland?", Answers: []string{"Paris", "London", "Berlin", "Madrid"}, CorrectAnswer: "Helsinki"},
-	}
+	l.Game = realtime.NewGame("default", len(l.Quiz.Questions), 10)
+
 	ticker := time.NewTicker(duration * time.Second)
-	l.Game.CurrentRound = 1
+	l.Game.State.CurrentRound = 1
 	l.Game.State.SubmittedAnswers = make(map[string]string)
 	lobbyState := &realtime.LobbyState{
 		State: &realtime.GameState{
-			Question:     questionBank[l.Game.CurrentRound-1].Question,
-			Answers:      questionBank[l.Game.CurrentRound-1].Answers,
-			Expiration:   time.Now().Unix() + duration,
-			CurrentRound: l.Game.CurrentRound,
-		}, Players: GetPlayerList(l)}
+			Question:     l.Quiz.Questions[l.Game.State.CurrentRound-1],
+			Deadline:     time.Now().Unix() + duration,
+			CurrentRound: l.Game.State.CurrentRound,
+		}, Players: GetPlayerList(l),
+		Settings: &realtime.GameSettings{
+			TotalRounds:   l.Game.Settings.TotalRounds,
+			RoundDuration: l.Game.Settings.RoundDuration,
+		},
+		Code: l.Code,
+	}
 
 	state, _ := json.Marshal(&realtime.Event{Type: "GAME_STATE", Payload: lobbyState})
 
@@ -81,34 +69,28 @@ func StartGame(l *realtime.Lobby) {
 		case <-ticker.C:
 			// Logic to handle end of round
 			// fmt.Println("Round %s ended", g.CurrentRound)
-			JudgeAnswers(l, questionBank[l.Game.CurrentRound-1].CorrectAnswer)
-			l.Game.CurrentRound++
-			l.Game.State.SubmittedAnswers = make(map[string]string)
-			lobbyState := &realtime.LobbyState{
-				State: &realtime.GameState{
-					Question: questionBank[l.Game.CurrentRound-1].Question,
-					Answers:  questionBank[l.Game.CurrentRound-1].Answers,
-
-					Expiration:   time.Now().Unix() + duration,
-					CurrentRound: l.Game.CurrentRound,
-				},
-				Players: GetPlayerList(l),
+			var correctAnswer string
+			for _, a := range l.Quiz.Questions[l.Game.State.CurrentRound-1].Answers {
+				if a.Correct {
+					correctAnswer = a.Text
+				}
 			}
 
-			state, _ := json.Marshal(&realtime.Event{Type: "GAME_STATE", Payload: lobbyState})
+			JudgeAnswers(l, correctAnswer)
+			l.Game.State.SubmittedAnswers = make(map[string]string)
+			l.Game.State.CurrentRound++
+		
 
-			l.Broadcast <- state
-
-			if l.Game.CurrentRound >= l.Game.TotalRounds {
+			if l.Game.State.CurrentRound > l.Game.Settings.TotalRounds {
 				// Logic to handle end of game
 				// g.Lobby.BroadcastServerMessage("Game ended")
 				for c := range l.Clients {
 					c.PlayerInfo.Score = 0
 				}
-				l.Game.CurrentRound = 1
+				l.Game.State.CurrentRound = 1
 				lobbyState := &realtime.LobbyState{
 					State: &realtime.GameState{
-						CurrentRound: l.Game.CurrentRound,
+						CurrentRound: l.Game.State.CurrentRound,
 					},
 				}
 				state, _ := json.Marshal(&realtime.Event{Type: "GAME_STATE", Payload: lobbyState})
@@ -116,6 +98,21 @@ func StartGame(l *realtime.Lobby) {
 				return
 			}
 
+				lobbyState := &realtime.LobbyState{
+				State: &realtime.GameState{
+					Question:     l.Quiz.Questions[l.Game.State.CurrentRound-1],
+					Deadline:     time.Now().Unix() + duration,
+					CurrentRound: l.Game.State.CurrentRound,
+				},
+				Settings: &realtime.GameSettings{
+					TotalRounds:   l.Game.Settings.TotalRounds,
+					RoundDuration: l.Game.Settings.RoundDuration,
+				},
+				Players: GetPlayerList(l),
+			}
+			state, _ := json.Marshal(&realtime.Event{Type: "GAME_STATE", Payload: lobbyState})
+
+			l.Broadcast <- state
 		}
 	}
 

@@ -22,8 +22,8 @@ type Answer struct {
 	Correct bool   `json:"correct" bson:"correct"`
 }
 type QuizStats struct {
-	Plays  int     `json:"plays" bson:"plays"`
-	Stars  int     `json:"stars" bson:"stars"`
+	Plays int `json:"plays" bson:"plays"`
+	Stars int `json:"stars" bson:"stars"`
 	// Rating float32 `json:"rating" bson:"rating"`
 }
 type QuizMeta struct {
@@ -31,7 +31,20 @@ type QuizMeta struct {
 	Description string `json:"description" bson:"description"`
 	Category    string `json:"category" bson:"category"`
 	Public      bool   `json:"public" bson:"public"`
-	ImageSrc    string `json:"image_src" bson:"image_src"`
+	Image       Image  `json:"image" bson:"image"`
+}
+
+type Image struct {
+	Src  string    `json:"src" bson:"src"`
+	Meta ImageMeta `json:"meta" bson:"meta"`
+}
+type ImageMeta struct {
+	Color Color `json:"color" bson:"color"`
+}
+type Color struct {
+	R uint8 `json:"r" bson:"r"`
+	G uint8 `json:"g" bson:"g"`
+	B uint8 `json:"b" bson:"b"`
 }
 
 type QuizVisibility string
@@ -48,6 +61,7 @@ type QuizRepository interface {
 	Quizzes(userId string) ([]*Quiz, error)
 	InsertQuiz(Quiz Quiz) (string, error)
 	UpdateQuiz(id string, Quiz Quiz) error
+	DeleteQuiz(id string) error
 }
 
 type QuizService interface {
@@ -55,4 +69,5 @@ type QuizService interface {
 	Quizzes(userId string) ([]*Quiz, error)
 	CreateQuiz(quiz Quiz) (string, error)
 	UpdateQuiz(id string, quiz Quiz) error
+	DeleteQuiz(id string) error
 }

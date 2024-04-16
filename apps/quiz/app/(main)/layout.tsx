@@ -25,7 +25,7 @@ export default function RootLayout({
           <div className="flex-1 flex flex-col w-full bg-[#1a1e24] ">
             {children}
           </div>
-          <ActivityBar />
+          {/* <ActivityBar /> */}
         </div>
         <Script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></Script>
         <Toaster />

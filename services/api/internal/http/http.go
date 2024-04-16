@@ -70,6 +70,7 @@ func NewServer(
 		authService,
 		userService,
 		lobbyService,
+		setService,
 	)
 	addPublicRoutes(
 		mux,
@@ -92,10 +93,12 @@ func addInternalRoutes(
 	authService api.AuthService,
 	userService api.UserService,
 	lobbyService api.LobbyService,
+	qs api.QuizService,
 ) {
 	mux.Handle("/internal/auth/validate", internalOnly(handleTokenValidation(authService, userService))) // exchange temp auth token for user info
 	mux.Handle("/internal/lobby/create", internalOnly(lobbyCreateHandler(lobbyService)))                 // get assigned a unique lobby code and initialize lobby in metadata store
-	mux.Handle("/internal/lobby/update", internalOnly(lobbyUpdateHandler(lobbyService)))                 // update lobby meta data
+	mux.Handle("/internal/lobby/update", internalOnly(lobbyUpdateHandler(lobbyService)))
+	mux.Handle("/internal/quiz", internalOnly(fetchQuizHandler(qs))) // update lobby meta data
 	// mux.Handle("/internal/lobby/close", internalOnly(lobbyCloseHandler(lobbyService))) evict a lobby from metadata store
 	// mux.Handle("/internal/server/health", internalOnly(healthCheckHandler())) report server health
 	// mux.Handle("GET /internal/set/{id}", internalOnly(setHandler()) fetch a set by id, need to make sure user has access to it
@@ -104,9 +107,9 @@ func addInternalRoutes(
 
 func addPublicRoutes(mux *http.ServeMux, authService api.AuthService, userService api.UserService, lobbyService api.LobbyService, quizService api.QuizService) {
 	mux.Handle("/lobby", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyJoinHandler(lobbyService), authService), userService))) // join a lobby
-	mux.Handle("/lobby/host", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyHostHandler(), authService), userService))) // create a lobby
+	mux.Handle("/lobby/host", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyHostHandler(), authService), userService)))        // create a lobby
 
-	mux.Handle("/quiz", quizHandler(quizService))   // crud for sets, POST ignores id slug, make sure user has access to set
+	mux.Handle("/quiz", quizHandler(quizService))       // crud for sets, POST ignores id slug, make sure user has access to set
 	mux.Handle("/quizzes", quizzesHandler(quizService)) // list sets, gets all sets user has access to
 }
 

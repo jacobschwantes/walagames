@@ -1,43 +1,54 @@
 "use server";
+
 const sharp = require("sharp");
-const { Readable } = require("stream");
-export async function uploadImage(formData: FormData) {
-  console.log("Uploading image in action");
-  const imageFile = formData.get("file");
 
-  // Convert the File object to a Buffer
-  const buffer = await imageFile.arrayBuffer();
-  const imageBuffer = Buffer.from(buffer);
+type UploadResponse = { src: string } | { error: string };
 
-  // Compress the image using sharp
-  const compressedBuffer = await sharp(imageBuffer) // Optional: Resize the image
+export async function uploadImage(formData: FormData): Promise<UploadResponse> {
+  try {
+    const imageFile = formData.get("file");
+    if (!imageFile) {
+      return { error: "No file received" };
+    }
+
+    // @ts-expect-error
+    // Convert to array buffer so sharp can read it
+    const buffer = await imageFile.arrayBuffer();
+    const imageBuffer = Buffer.from(buffer);
+
+    // Compress the image
+    const compressedBuffer = await sharp(imageBuffer)
       .webp({ quality: 80 })
       .resize({ width: 1200 })
-    .toBuffer();
+      .toBuffer();
 
-  // Convert the compressed buffer to a Blob
-  const compressedBlob = new Blob([compressedBuffer], { type: "image/webp" });
+    // Convert back to FormData file for upload
+    const compressedBlob = new Blob([compressedBuffer], { type: "image/webp" });
+    const newFormData = new FormData();
+    newFormData.append("file", compressedBlob, "image.webp");
 
-  // Create a new FormData and append the compressed image Blob
-  const newFormData = new FormData();
-  newFormData.append("file", compressedBlob, "image.webp");
-  const response = await fetch(`${process.env.ZIPLINE_API_ENDPOINT}/upload`, {
-    method: "POST",
-    headers: {
-      Format: "UUID",
-      "X-Zipline-Folder": "1",
-      //   "Image-Compression-Percent": "50",
-      Authorization: `${process.env.ZIPLINE_ACCESS_TOKEN}`,
-    },
-    body: newFormData,
-  });
-  if (!response.ok) {
-    const resText = await response.text();
-    console.log(resText);
-    throw new Error(resText || "Unknown error");
+    // Upload
+    const response = await fetch(`${process.env.ZIPLINE_API_ENDPOINT}/upload`, {
+      method: "POST",
+      headers: {
+        Format: "UUID",
+        "X-Zipline-Folder": "1",
+        Authorization: `${process.env.ZIPLINE_ACCESS_TOKEN}`,
+      },
+      body: newFormData,
+    });
+    if (!response.ok) {
+      const resText = await response.text();
+      throw new Error(resText || "Unknown error");
+    }
+    
+    const data = await response.json();
+    return {
+      src: data.files[0],
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
-  const data = await response.json();
-
-  console.log(data);
-  return data;
 }

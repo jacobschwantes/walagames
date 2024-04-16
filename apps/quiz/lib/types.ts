@@ -88,7 +88,18 @@ export const QuizFormSchema = z.object({
     description: z.string(),
     category: z.string(),
     public: z.boolean(),
-    image_src: z.string(),
+    image: z.object({
+      src: z.string(),
+      meta: z
+        .object({
+          color: z.object({
+            r: z.number(),
+            g: z.number(),
+            b: z.number(),
+          }),
+        })
+        .optional(),
+    }),
   }),
   questions: z.array(QuestionSchema),
 });

@@ -3,7 +3,7 @@
 import { createQuiz } from "@/actions/quiz";
 import { Button } from "../ui/button";
 import { PushButton } from "../ui/custom-button";
-import { PencilLine } from "lucide-react";
+import { ChevronRight, PencilLine, PlusIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 const sample = {
   meta: {
@@ -12,7 +12,16 @@ const sample = {
       "Video Game History and fun Trivia for all ages to learn more about the video game industry and to test their knowledge on games, gaming consoles, companies, and developers.",
     category: "Technology",
     public: true,
-    image_src: "/preview4.jpg",
+    image: {
+      src: "/preview.jpg",
+      meta: {
+        color: {
+          r: 166,
+          g: 188,
+          b: 221,
+        },
+      },
+    },
   },
   questions: [
     {
@@ -51,9 +60,18 @@ export const QuizForm = () => {
   };
   return (
     <form action={handleCreateQuiz}>
-      <PushButton className="text-sm" color="violet" type="submit">
-       <PencilLine className="h-4 w-4 mr-1"/> Create
-      </PushButton>
+      <Button
+        variant="violet"
+        // size="lg"
+        className=" flex gap-0.5"
+        type="submit"
+      >
+        {/* <span className="p-0.5 rounded-full bg-violet-300/30 mr-1"> */}
+          {/* <ChevronRight className="h-3 w-3" /> */}
+          <PlusIcon className="h-4 w-4" />
+        {/* </span> */}
+        New Quiz
+      </Button>
     </form>
   );
 };

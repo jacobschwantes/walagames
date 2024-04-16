@@ -27,6 +27,11 @@ func lobbyHandler(lobbyManager realtime.LobbyManager, apiClient realtime.APIClie
 			}
 		} else {
 			if player.Authenticated {
+				quizID := r.URL.Query().Get("id")
+				if quizID == "" {
+					http.Error(w, "Must supply quizID", http.StatusBadRequest)
+					return
+				}
 				fmt.Println("player authenticated")
 				lobbyCode, err := apiClient.GetLobbyCode()
 				if err != nil {
@@ -34,7 +39,7 @@ func lobbyHandler(lobbyManager realtime.LobbyManager, apiClient realtime.APIClie
 					http.Error(w, "Failed to get lobby code.", http.StatusInternalServerError)
 					return
 				}
-				lobby, err = lobbyManager.CreateLobby(lobbyCode)
+				lobby, err = lobbyManager.CreateLobby(lobbyCode, quizID)
 				if err != nil {
 					http.Error(w, "Failed to create lobby.", http.StatusInternalServerError)
 					return

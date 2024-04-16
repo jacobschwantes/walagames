@@ -27,3 +27,7 @@ func (qs *quizService) CreateQuiz(quiz api.Quiz) (string, error) {
 func (qs *quizService) UpdateQuiz(id string, quiz api.Quiz) error {
 	return qs.repo.UpdateQuiz(id, quiz)
 }
+
+func (qs *quizService) DeleteQuiz(id string) error {
+	return qs.repo.DeleteQuiz(id);
+}

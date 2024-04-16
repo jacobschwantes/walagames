@@ -4,9 +4,32 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { PushButton, SaveButton } from "../ui/custom-button";
 import { Pencil1Icon } from "@radix-ui/react-icons";
-import { ImagePlus, Pencil, Save, UploadIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  ChevronRight,
+  ImagePlus,
+  Pencil,
+  PencilLine,
+  Save,
+  Trash,
+  UploadIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { uploadImage } from "@/actions/upload";
+import ColorThief from "colorthief";
+import { Button } from "../ui/button";
+import { deleteQuiz } from "@/actions/quiz";
+import Link from "next/link";
 
 // wrench icon
 {
@@ -23,8 +46,17 @@ interface QuizHeaderProps {
   title: string;
   category: string;
   description: string;
-  image_src: string;
+  image: {
+    src: string;
+    meta: {
+      colorHex: string;
+      colorRGBA: string;
+      isDark: boolean;
+    };
+  };
+  id: string;
   isEditing: boolean;
+  setImageColorData: (color: { r: number; g: number; b: number }) => void;
   setIsEditing: (isEditing: boolean) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   imageDataUrl: string | null;
@@ -33,24 +65,36 @@ interface QuizHeaderProps {
 const QuizHeader = ({
   title,
   category,
+  id,
   description,
-  image_src,
+  image,
   isEditing,
   setIsEditing,
   onSaveQuiz,
   handleFileChange,
+  setImageColorData,
   imageDataUrl,
 }: QuizHeaderProps) => {
   // const router = useRouter();
   // const handleEdit = () => {
   //   router.push("?edit");
   // };
+  const imgRef = React.useRef();
+
   return (
     <>
-      <motion.div layout className="w-full relative pt-6 px-6">
+      <motion.div
+        layout="position"
+        transition={{
+          duration: 0.3,
+          ease: [0, 0.71, 0.2, 1.01],
+          restDelta: 1,
+        }}
+        className="w-full relative pt-6 px-6"
+      >
         <div className="grid grid-cols-2 items-start w-full  gap-12 absolute bottom-5 left-0 right-0 px-12 z-20">
           <div className="flex flex-col justify-between gap-0.5">
-            <motion.h2 className="text-3xl">{title}</motion.h2>
+            <h2 className="text-3xl">{title}</h2>
             <p className="text-zinc-200  text-sm">{category}</p>
           </div>
           {/* <div className="flex gap-2 max-w-smt ml-auto">
@@ -73,66 +117,81 @@ const QuizHeader = ({
               />
             </div>
           )}
-          <motion.div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-75"></motion.div>
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-80"></div>
           <Image
             objectFit="cover"
             alt="preview image"
             fill
+            // ref={imgRef}
+            // onLoad={() => {
+            //   const colorThief = new ColorThief();
+            //   const img = imgRef.current;
+            //   const color = colorThief.getColor(img);
+            //   const colorObj = {
+            //     r: color[0],
+            //     g: color[1],
+            //     b: color[2],
+            //   };
+            //   console.log(color);
+            //   setImageColorData(colorObj);
+            // }}
             // TODO: set these sizes for performance
             // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            src={imageDataUrl ?? image_src}
+            src={imageDataUrl ?? image.src}
           />
         </div>
       </motion.div>
-      <motion.div layout className="px-6 sticky top-0 z-50">
-        <div className=" p-4 flex gap-2 mx-auto max-w-6xl rounded-b-xl items-center  w-full justify-between  bg-[#242a32] px-6">
+      <motion.div
+        transition={{
+          duration: 0.3,
+          ease: [0, 0.71, 0.2, 1.01],
+          restDelta: 1,
+        }}
+        layout="position"
+        className="px-6 sticky top-0 z-50"
+      >
+        <div className=" p-3 flex gap-2 mx-auto max-w-6xl rounded-b-xl items-center  w-full justify-between  bg-[#242a32] px-6">
           <div className="flex items-center gap-2">
-            <PushButton color="sky">
-              <span className="flex items-center gap-1">
-                <svg className="h-3 w-3 text-white" viewBox="0 0 448 512">
+            <Link href={`/lobby?id=${id}`}>
+              <Button
+                // size="lg"
+                variant="sky"
+                className=" flex gap-1 items-center px-12"
+              >
+                <svg
+                  className="h-[.65rem] w-[.65rem] text-white"
+                  viewBox="0 0 448 512"
+                >
                   <path
                     fill="currentColor"
                     d="m424.4 214.7-352-208.1c-28.6-16.9-72.4-.5-72.4 41.3v416.1c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"
                   />
                 </svg>
-                Host
-              </span>
-            </PushButton>
+                {/* <span className="p-0.5 rounded-full bg-sky-300/30 mr-1">
+                <ChevronRight className="h-3 w-3" />
+              </span> */}
+                Play
+              </Button>
+            </Link>
             {isEditing ? (
               <form action={onSaveQuiz}>
                 <SaveButton />
               </form>
             ) : (
-              <PushButton
+              <Button
+                // size="lg"
+                className=""
                 onClick={() => setIsEditing(!isEditing)}
-                color="violet"
+                variant="violet"
               >
-                <span className="flex items-center gap-1">
-                  <Pencil className="h-[14px] w-[14px] text-white" />
-                  Edit
+                <span className="mr-1">
+                  <PencilLine className="h-4 w-4" />
+                  {/* <PlusIcon className="h-3 w-3" /> */}
                 </span>
-              </PushButton>
+                Edit
+              </Button>
             )}
-          </div>
-          {/* <ul className="grid grid-cols-4 divide-x divide-[#1a1e24] h-18 bg-[#1a1e24] px-3 py-3 rounded-xl gap-4 items-center">
-              {Object.keys(sample.stats).map((key) => (
-                <li
-                  key={key}
-                  className="flex flex-col items-center justify-center w-full h-full px-6 "
-                >
-                  <span className="text-lg leading-tight">
-                    {sample.stats[key]}
-                  </span>
-                  <span className="text-xs font-light text-zinc-400 capitalize">
-                    {key}
-                  </span>
-                </li>
-              ))}
-            </ul> */}
-          <div className="flex items-center gap-2">
-            {/* <button className="p-3 bg-[#1a1e24] rounded-full flex">
-              <DotsVerticalIcon className="h-5 w-5 text-white" />
-            </button> */}
+            <DeleteDialog id={id} />
           </div>
         </div>
       </motion.div>
@@ -140,4 +199,38 @@ const QuizHeader = ({
   );
 };
 
-export { QuizHeader };
+export { QuizHeader, DeleteDialog };
+
+function DeleteDialog({ id }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button className="flex gap-1" variant="destructive">
+          <span className="">
+            <Trash className="h-4 w-4" />
+          </span>
+          Delete
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This quiz will be permanently deleted.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <form
+            action={async () => {
+              await deleteQuiz(id).then(() => setOpen(false));
+            }}
+          >
+            <Button type="submit">Continue</Button>
+          </form>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

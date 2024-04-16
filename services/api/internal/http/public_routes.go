@@ -131,8 +131,7 @@ func lobbyJoinHandler(lobbyService api.LobbyService) http.HandlerFunc {
 
 			lobbyData, err := lobbyService.GetLobbyState(r.Context(), code)
 			if err != nil {
-				log.Fatal(err)
-				http.Error(w, "Failed to get lobby data.", http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("%s", err), http.StatusInternalServerError)
 				return
 			}
 
@@ -211,7 +210,7 @@ func quizzesHandler(qs api.QuizService) http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		
+
 		switch r.Method {
 		case http.MethodOptions:
 			w.WriteHeader(http.StatusOK)
@@ -255,7 +254,7 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		userID := r.URL.Query().Get("user_id")
@@ -270,8 +269,8 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 			quizID := r.URL.Query().Get("id")
 			quiz, err := qs.Quiz(quizID)
 			if err != nil {
-				log.Fatal(err)
-				http.Error(w, "Failed to get set.", http.StatusInternalServerError)
+				// log.Fatal(err)
+				http.Error(w, "Set does not exist.", http.StatusNotFound)
 				return
 			}
 
@@ -282,7 +281,7 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 
 			jsonData, err := json.Marshal(quiz)
 			if err != nil {
-				log.Fatal(err)
+				// log.Fatal(err)
 				http.Error(w, "Failed to marshal set.", http.StatusInternalServerError)
 				return
 			}
@@ -292,7 +291,7 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 		case http.MethodPost:
 			var quiz api.Quiz
 			if err := json.NewDecoder(r.Body).Decode(&quiz); err != nil {
-				log.Fatal(err)
+				// log.Fatal(err)
 				http.Error(w, "Failed to decode set.", http.StatusBadRequest)
 				return
 			}
@@ -311,7 +310,7 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 
 			id, err := qs.CreateQuiz(quiz)
 			if err != nil {
-				log.Fatal(err)
+				// log.Fatal(err)
 				http.Error(w, "Failed to create set.", http.StatusInternalServerError)
 				return
 			}
@@ -326,7 +325,7 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 
 			jsonData, err := json.Marshal(resp)
 			if err != nil {
-				log.Fatal(err)
+				// log.Fatal(err)
 				http.Error(w, "Failed to marshal set.", http.StatusInternalServerError)
 				return
 			}
@@ -357,8 +356,6 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 			quiz.UpdatedAt = time.Now()
 			quiz.Meta = quizReq.Meta
 			quiz.Questions = quizReq.Questions
-			
-
 
 			err = qs.UpdateQuiz(quizID, *quiz)
 			if err != nil {
@@ -366,6 +363,32 @@ func quizHandler(qs api.QuizService) http.HandlerFunc {
 				http.Error(w, "Failed to update set.", http.StatusInternalServerError)
 				return
 			}
+			w.WriteHeader(http.StatusOK)
+		case http.MethodDelete:
+			fmt.Println("DELETE QUIZ")
+			quizID := r.URL.Query().Get("id")
+			if quizID == "" {
+				http.Error(w, "Must pass in quiz id.", http.StatusBadRequest)
+				return
+			}
+
+			quiz, err := qs.Quiz(quizID)
+			if err != nil {
+				http.Error(w, "Quiz does not exist.", http.StatusNotFound)
+				return
+			}
+			if quiz.OwnerID != userID {
+				http.Error(w, "Unauthorized.", http.StatusUnauthorized)
+				return
+			}
+
+			err = qs.DeleteQuiz(quizID)
+			if err != nil {
+				http.Error(w, "Failed to delete quiz.", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
 		default:
 			http.Error(w, "Method not allowed.", http.StatusMethodNotAllowed)
 		}

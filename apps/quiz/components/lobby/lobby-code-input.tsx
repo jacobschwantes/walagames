@@ -8,49 +8,25 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+interface LobbyCodeInputProps {}
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { toast } from "sonner";
 import { joinLobby } from "@/actions/lobby";
-import { useRouter } from "next/navigation";
-interface PageProps {
-  params: {
-    code: string;
-  };
-}
-
-export default function Page({ params }) {
-  const router = useRouter();
-  const { code } = params;
-
-  const handleJoin = async (lobbyCode: string): Promise<void | Error> => {
-    const response = await joinLobby(lobbyCode);
-    if ("error" in response) {
-      throw new Error(response.error);
-    }
-    const { server, token } = response;
-
-    router.push(`/lobby?token=${token}&code=${lobbyCode}&server=${server}`);
-  };
-
-  return (
-    <main className="flex  flex-col items-center w-full">
-      <LobbyCodeForm onSubmit={handleJoin} />
-    </main>
-  );
-}
+import { redirect, useRouter } from "next/navigation";
 const FormSchema = z.object({
   code: z.string(),
 });
-interface LobbyFormProps {
-  onSubmit: (code: string) => Promise<void | Error>;
-}
-function LobbyCodeForm({ onSubmit }: LobbyFormProps) {
+
+export default function LobbyCodeInput({ }: LobbyCodeInputProps) {
+  const router = useRouter()
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -58,14 +34,22 @@ function LobbyCodeForm({ onSubmit }: LobbyFormProps) {
     },
   });
 
-  async function onComplete(data: z.infer<typeof FormSchema>) {
-    try {
-      await onSubmit(data.code.toUpperCase());
-    } catch (error) {
-      if (error instanceof Error) {
-        form.setError("code", { type: "custom", message: error.message });
-      }
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    const response = await joinLobby(data.code.toUpperCase());
+    if ("error" in response) {
+      form.setError("code", { type: "custom", message: response.error });
+      console.error(response.error);
+      toast.error(`Failed to join lobby. ${response.error}`);
+      return;
     }
+    const { server, token } = response;
+
+    toast(`${server} ${token}`)
+
+   
+
+    router.push(`/lobby?token=${token}&code=${data.code.toUpperCase()}&server=${server}` )
+
   }
 
   return (
@@ -79,7 +63,7 @@ function LobbyCodeForm({ onSubmit }: LobbyFormProps) {
             <FormControl>
               <InputOTP
                 {...field}
-                onComplete={form.handleSubmit(onComplete)}
+                onComplete={form.handleSubmit(onSubmit)}
                 inputMode="text"
                 autoFocus
                 maxLength={4}
@@ -97,6 +81,9 @@ function LobbyCodeForm({ onSubmit }: LobbyFormProps) {
                 )}
               />
             </FormControl>
+            {/* <FormDescription>
+              Please enter the lobby code.
+            </FormDescription> */}
             <FormMessage />
           </FormItem>
         )}

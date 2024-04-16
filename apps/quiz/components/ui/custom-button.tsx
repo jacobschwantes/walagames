@@ -4,6 +4,7 @@ import { HTMLMotionProps, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useFormStatus } from "react-dom";
 import { Save, SaveIcon } from "lucide-react";
+import { Button } from "./button";
 
 const buttonVariants = {
   color: {
@@ -140,8 +141,8 @@ const PushButton: React.FC<PushButtonProps> = ({
 const SaveButton = () => {
   const { pending } = useFormStatus();
   return (
-    <PushButton color="violet">
-      <motion.span layout className="flex gap-1 items-center">
+    <Button variant="violet" className="">
+      <motion.span layout className="flex gap-1  items-center">
         {pending ? (
           <motion.span layout className="loader h-4 w-4" />
         ) : (
@@ -149,7 +150,7 @@ const SaveButton = () => {
         )}
         Save
       </motion.span>
-    </PushButton>
+    </Button>
   );
 };
 

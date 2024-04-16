@@ -9,6 +9,7 @@ import { uploadImage } from "@/actions/upload";
 import { set } from "zod";
 import { isEqual } from "lodash";
 import { useRouter } from "next/navigation";
+import { LayoutGroup } from "framer-motion";
 
 interface QuizPageProps {
   initialData: Quiz;
@@ -24,7 +25,6 @@ export default function QuizPage({ initialData }: QuizPageProps) {
   const [hasChanged, setHasChanged] = useState(false);
   const router = useRouter();
   const handleSaveQuiz = async () => {
-    
     if (
       isEqual(quizData, {
         ...quizData,
@@ -47,9 +47,8 @@ export default function QuizPage({ initialData }: QuizPageProps) {
         console.log("Error uploading image");
         return;
       }
-      updatedQuiz.meta.image_src = res.files[0];
+      updatedQuiz.meta.image = res;
       setImageData(null);
-
     }
 
     console.log("Save quiz");
@@ -104,26 +103,43 @@ export default function QuizPage({ initialData }: QuizPageProps) {
   };
   return (
     <>
-      <QuizHeader
-        handleFileChange={handleFileChange}
-        imageDataUrl={imageDataUrl}
-        isEditing={isEditing}
-        setIsEditing={setIsEditing}
-        onSaveQuiz={handleSaveQuiz}
-        {...initialData.meta}
-      />
-      <QuestionList
-        questions={questions}
-        setQuestions={setQuestions}
-        isEditing={isEditing}
-        onNewQuestion={handleNewQuestion}
-        onDeleteQuestion={handleDeleteQuestion}
-        onSaveQuestion={handleSaveQuestion}
-        expandedQuestion={expandedQuestion}
-        setExpandedQuestion={setExpandedQuestion}
-        editingQuestion={editingQuestion}
-        setEditingQuestion={setEditingQuestion}
-      />
+      <LayoutGroup >
+        <QuizHeader
+          id={initialData.id}
+          setImageColorData={(color) =>
+            setQuizData((prev) => ({
+              ...prev,
+              meta: {
+                ...prev.meta,
+                image: {
+                  ...prev.meta.image,
+                  meta: {
+                    color,
+                  },
+                },
+              },
+            }))
+          }
+          handleFileChange={handleFileChange}
+          imageDataUrl={imageDataUrl}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          onSaveQuiz={handleSaveQuiz}
+          {...initialData.meta}
+        />
+        <QuestionList
+          questions={questions}
+          setQuestions={setQuestions}
+          isEditing={isEditing}
+          onNewQuestion={handleNewQuestion}
+          onDeleteQuestion={handleDeleteQuestion}
+          onSaveQuestion={handleSaveQuestion}
+          expandedQuestion={expandedQuestion}
+          setExpandedQuestion={setExpandedQuestion}
+          editingQuestion={editingQuestion}
+          setEditingQuestion={setEditingQuestion}
+        />
+      </LayoutGroup>
     </>
   );
 }

@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 type SuccessResponse = {
   server: string;
   token: string;
+  username: string;
 };
 
 type ErrorResponse = {
@@ -42,7 +43,7 @@ export const createLobby = async (): Promise<LobbyResponse> => {
     if (!response.ok) {
       throw new Error(data.error || "Unknown error");
     }
-    return data;
+    return {...data, username: session.user.name}
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",
@@ -74,14 +75,20 @@ export const joinLobby = async (code: string): Promise<LobbyResponse> => {
         code,
       }),
     });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Unknown error");
+
+    
+
+    let data;
+    if (response.ok) {
+      data = await response.json();
+    } else {
+      throw new Error((await response.text()) || "Unknown error");
     }
+
     return data;
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
-}
+};

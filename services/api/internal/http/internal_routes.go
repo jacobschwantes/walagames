@@ -133,3 +133,28 @@ func lobbyUpdateHandler(lobbyService api.LobbyService) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func fetchQuizHandler(qs api.QuizService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if quizID := r.URL.Query().Get("id"); quizID != "" {
+
+			quiz, err := qs.Quiz(quizID)
+			if err != nil {
+				http.Error(w, "Quiz not found", http.StatusNotFound)
+				return
+			}
+
+			msg, err := json.Marshal(quiz)
+			if err != nil {
+				log.Fatal(err)
+				http.Error(w, "Internal server error.", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(msg)
+			return
+		}
+		http.Error(w, "Quiz id is required.", http.StatusBadRequest)
+	}
+}

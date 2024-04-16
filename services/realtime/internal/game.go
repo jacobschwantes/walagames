@@ -1,43 +1,36 @@
 package realtime
 
 type Game struct {
-	Mode         string
-	State        *GameState
-	Settings     *GameSettings
-	CurrentRound int
-	TotalRounds  int
-	Control      chan string
+	State    *GameState
+	Settings *GameSettings
+	Control  chan string
 }
 
 func NewGame(mode string, totalRounds int, roundLength int) *Game {
 	return &Game{
-		Mode: mode,
 		State: &GameState{
 			SubmittedAnswers: make(map[string]string),
 			CurrentRound:     1,
 		},
-		CurrentRound: 1,
-		TotalRounds:  totalRounds,
 		Settings: &GameSettings{
-			Mode:        mode,
-			TotalRounds: totalRounds,
-			RoundLength: roundLength,
+			Mode:          mode,
+			TotalRounds:   totalRounds,
+			RoundDuration: roundLength,
 		},
 		Control: make(chan string),
 	}
 }
 
 type GameState struct {
-	Question         string            `json:"question,omitempty"`
-	Expiration       int64             `json:"expiration,omitempty"`
+	Question         Question          `json:"question,omitempty"`
+	Deadline         int64             `json:"deadline,omitempty"`
 	CurrentRound     int               `json:"currentRound,omitempty"`
-	Answers          []string          `json:"answers,omitempty"`
 	SubmittedAnswers map[string]string `json:"-"`
 }
 type GameSettings struct {
-	Mode        string `json:"mode,omitempty"`
-	TotalRounds int    `json:"totalRounds,omitempty"`
-	RoundLength int    `json:"roundLength,omitempty"`
+	Mode          string `json:"mode,omitempty"`
+	TotalRounds   int    `json:"totalRounds,omitempty"`
+	RoundDuration int    `json:"roundLength,omitempty"` // in seconds
 }
 
 type GameService interface {

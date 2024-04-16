@@ -4,7 +4,6 @@ import { LobbyState, PlayerAction, LobbyEvent, PlayerRole } from "@/lib/types";
 
 export const useLobby = (
   url: string,
-  username?: string
 ): [LobbyState, (type: PlayerAction, payload: any) => void] => {
   const ws = useRef<WebSocket | null>(null);
   const mountedRef = useRef(false);

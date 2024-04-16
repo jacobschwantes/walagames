@@ -214,21 +214,21 @@ export const updateQuiz = async (
  */
 export const deleteQuiz = async (id: string): Promise<Quiz | ErrorResponse> => {
   try {
+    console.log("deleting quiz with id:", id)
     const userid = await getUserID();
-    const response = await fetch(`${process.env.API_ENDPOINT}/quiz/${id}`, {
+    const response = await fetch(`${process.env.API_ENDPOINT}/quiz?id=${id}&user_id=${userid}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.API_KEY}`,
       },
-      body: JSON.stringify({
-        userid,
-      }),
     });
-    const data = await response.json();
+    const data = await response.text();
     if (!response.ok) {
-      throw new Error(data.error || "Unknown error");
+      throw new Error(data || "Unknown error");
     }
+    revalidatePath("/library");
+    revalidatePath(`/quiz/${id}`);
     return data;
   } catch (error) {
     return {
