@@ -31,20 +31,7 @@ type QuizMeta struct {
 	Description string `json:"description" bson:"description"`
 	Category    string `json:"category" bson:"category"`
 	Public      bool   `json:"public" bson:"public"`
-	Image       Image  `json:"image" bson:"image"`
-}
-
-type Image struct {
-	Src  string    `json:"src" bson:"src"`
-	Meta ImageMeta `json:"meta" bson:"meta"`
-}
-type ImageMeta struct {
-	Color Color `json:"color" bson:"color"`
-}
-type Color struct {
-	R uint8 `json:"r" bson:"r"`
-	G uint8 `json:"g" bson:"g"`
-	B uint8 `json:"b" bson:"b"`
+	ImageSrc    string `json:"imageSrc" bson:"imageSrc"`
 }
 
 type QuizVisibility string

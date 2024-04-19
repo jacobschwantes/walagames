@@ -15,7 +15,7 @@ type quizRepository struct {
 	db *mongo.Client
 }
 
-func NewSetRepository(db *mongo.Client) api.QuizRepository {
+func NewQuizRepository(db *mongo.Client) api.QuizRepository {
 	return &quizRepository{
 		db,
 	}

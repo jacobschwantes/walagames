@@ -14,22 +14,17 @@ import (
 
 func ServeHTTP(
 	ctx context.Context,
-	config api.HTTPConfig,
-	authService api.AuthService,
-	userService api.UserService,
-	lobbyService api.LobbyService,
-	quizService api.QuizService,
+	cfg api.HTTPConfig,
+	qr api.QuizRepository,
 ) error {
 	srv := NewServer(
-		authService,
-		userService,
-		lobbyService,
-		quizService,
+		qr,
 	)
 	httpServer := &http.Server{
-		Addr:    net.JoinHostPort(config.Host, config.Port),
+		Addr:    net.JoinHostPort(cfg.Host, cfg.Port),
 		Handler: *srv,
 	}
+
 	go func() {
 		log.Printf("listening on %s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -41,8 +36,6 @@ func ServeHTTP(
 	go func() {
 		defer wg.Done()
 		<-ctx.Done()
-		// make a new context for shutdown
-		// shutdownCtx := context.Background()
 		shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
@@ -55,83 +48,23 @@ func ServeHTTP(
 }
 
 func NewServer(
-	authService api.AuthService,
-	userService api.UserService,
-	lobbyService api.LobbyService,
-	setService api.QuizService,
+	qr api.QuizRepository,
 ) *http.Handler {
 	mux := http.NewServeMux()
 
-	// TODO: rate limiting middleware
-	// todo: logging middleware
-
-	addInternalRoutes(
+	addRoutes(
 		mux,
-		authService,
-		userService,
-		lobbyService,
-		setService,
-	)
-	addPublicRoutes(
-		mux,
-		authService,
-		userService,
-		lobbyService,
-		setService,
+		qr,
 	)
 
 	var handler http.Handler = mux
-	// ? handler = logging.NewLoggingMiddleware(logger, handler)
-	// !some routes need to bypass auth middleware
-	// ? consider name : checkAuthHeaders or other
-	handler = authHeaderMiddleware(handler)
+	handler = withCors(handler)
+	handler = internalOnly(handler)
 	return &handler
 }
 
-func addInternalRoutes(
-	mux *http.ServeMux,
-	authService api.AuthService,
-	userService api.UserService,
-	lobbyService api.LobbyService,
-	qs api.QuizService,
-) {
-	mux.Handle("/internal/auth/validate", internalOnly(handleTokenValidation(authService, userService))) // exchange temp auth token for user info
-	mux.Handle("/internal/lobby/create", internalOnly(lobbyCreateHandler(lobbyService)))                 // get assigned a unique lobby code and initialize lobby in metadata store
-	mux.Handle("/internal/lobby/update", internalOnly(lobbyUpdateHandler(lobbyService)))
-	mux.Handle("/internal/quiz", internalOnly(fetchQuizHandler(qs))) // update lobby meta data
-	// mux.Handle("/internal/lobby/close", internalOnly(lobbyCloseHandler(lobbyService))) evict a lobby from metadata store
-	// mux.Handle("/internal/server/health", internalOnly(healthCheckHandler())) report server health
-	// mux.Handle("GET /internal/set/{id}", internalOnly(setHandler()) fetch a set by id, need to make sure user has access to it
-	// mux.Handle("POST /internal/game/results", internalOnly(gameResultsHandler()) update user data using game results (e.g. history, score, xp, etc)
+func addRoutes(mux *http.ServeMux, qr api.QuizRepository) {
+	mux.Handle("/quiz", withUserID(quiz(qr)))
+	mux.Handle("/quiz/{id}", withUserID(quizByID(qr)))
+	mux.Handle("/quizzes", withUserID(quizzes(qr)))
 }
-
-func addPublicRoutes(mux *http.ServeMux, authService api.AuthService, userService api.UserService, lobbyService api.LobbyService, quizService api.QuizService) {
-	mux.Handle("/lobby", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyJoinHandler(lobbyService), authService), userService))) // join a lobby
-	mux.Handle("/lobby/host", internalOnly(userMiddleware(issueAuthTokenMiddleware(lobbyHostHandler(), authService), userService)))        // create a lobby
-
-	mux.Handle("/quiz", quizHandler(quizService))       // crud for sets, POST ignores id slug, make sure user has access to set
-	mux.Handle("/quizzes", quizzesHandler(quizService)) // list sets, gets all sets user has access to
-}
-
-// * allows the use of context values but still take advantage of the type safety of function parameters
-/*
-func main() {
-  mux := http.NewServeMux()
-  mux.HandleFunc("/", homeHandler)
-
-  http.ListenAndServe(":3000", addRequestID(addLogger(mux)))
-}
-
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-  ctx := r.Context()
-  reqID := GetRequestID(ctx)
-  logger := GetLogger(ctx)
-  home(w, r, reqID, logger)
-}
-
-func home(w http.ResponseWriter, r *http.Request, requestID int, logger *Logger) {
-  logger.Println("Here is a log")
-  fmt.Fprintln(w, "Homepage...")
-}
-
-*/
