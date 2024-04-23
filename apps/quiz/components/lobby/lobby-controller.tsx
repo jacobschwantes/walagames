@@ -3,6 +3,7 @@ import { useLobby } from "@/hooks/lobby";
 
 import GameClient from "../game/game-client";
 import { redirect, useRouter } from "next/navigation";
+import { useEffect } from "react";
 interface JoinLobbyControllerProps {
   username: string;
   connectionStr: string;
@@ -13,9 +14,14 @@ const LobbyController = ({
 }: JoinLobbyControllerProps) => {
   const [lobbyState, sendEvent] = useLobby(connectionStr);
   const router = useRouter();
+
+  useEffect(() => {
+    console.log(lobbyState)
+  }, [lobbyState])
+
   return (
     <main className="flex flex-col items-center h-full w-full">
-      {lobbyState.isConnected ? (
+      {lobbyState && lobbyState.code ? (
         <GameClient
           sendEvent={sendEvent}
           lobbyState={lobbyState}

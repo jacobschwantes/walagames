@@ -19,6 +19,7 @@ func ServeHTTP(
 ) error {
 	srv := NewServer(
 		qr,
+		cfg,
 	)
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(cfg.Host, cfg.Port),
@@ -49,6 +50,7 @@ func ServeHTTP(
 
 func NewServer(
 	qr api.QuizRepository,
+	cfg api.HTTPConfig,
 ) *http.Handler {
 	mux := http.NewServeMux()
 
@@ -58,8 +60,8 @@ func NewServer(
 	)
 
 	var handler http.Handler = mux
-	handler = withCors(handler)
-	handler = internalOnly(handler)
+	handler = withCors(handler, cfg.AllowedOrigins)
+	handler = internalOnly(handler, cfg.APIKey)
 	return &handler
 }
 

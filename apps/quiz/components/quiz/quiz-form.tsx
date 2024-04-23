@@ -4,7 +4,7 @@ import { createQuiz } from "@/actions/quiz";
 import { Button } from "../ui/button";
 import { PushButton } from "../ui/custom-button";
 import { ChevronRight, PencilLine, PlusIcon } from "lucide-react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 const sample = {
   meta: {
     title: "Video Game Trivia & History",
@@ -53,10 +53,11 @@ const sample = {
   ],
 };
 export const QuizForm = () => {
+  const router = useRouter();
   const handleCreateQuiz = async () => {
     const res = await createQuiz(sample);
     console.log(res);
-    redirect(`/quiz/${res.id}`);
+    router.push(`/quiz/${res.id}`)
   };
   return (
     <form action={handleCreateQuiz}>

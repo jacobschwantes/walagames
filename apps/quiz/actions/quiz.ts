@@ -45,12 +45,13 @@ export const createQuiz = async (
   try {
     const userid = await getUserID();
     const response = await fetch(
-      `${process.env.API_ENDPOINT}/quiz?user_id=${userid}`,
+      `${process.env.API_ENDPOINT}/quiz`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
+          Authorization: `${process.env.API_KEY}`,
+          "X-User-ID": userid
         },
         body: JSON.stringify({
           ...quiz.data,
@@ -87,16 +88,14 @@ export const fetchQuizById = async (
   try {
     const userid = await getUserID();
     const response = await fetch(
-      `${process.env.API_ENDPOINT}/quiz?id=${id}&user_id=${userid}`,
+      `${process.env.API_ENDPOINT}/quiz/${id}`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
+          Authorization: `${process.env.API_KEY}`,
+          "X-User-ID": userid
         },
-        //   body: JSON.stringify({
-        //     userid,
-        //   }),
       }
     );
     if (!response.ok) {
@@ -128,12 +127,13 @@ export const fetchQuizMany = async (
   try {
     const userid = await getUserID();
     const response = await fetch(
-      `${process.env.API_ENDPOINT}/quizzes?user_id=${userid}`,
+      `${process.env.API_ENDPOINT}/quizzes`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
+          Authorization: `${process.env.API_KEY}`,
+          "X-User-ID": userid
         },
       }
     );
@@ -179,12 +179,13 @@ export const updateQuiz = async (
   try {
     const userid = await getUserID();
     const response = await fetch(
-      `${process.env.API_ENDPOINT}/quiz?id=${id}&user_id=${userid}`,
+      `${process.env.API_ENDPOINT}/quiz/${id}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
+          Authorization: `${process.env.API_KEY}`,
+          "X-User-ID": userid
         },
         body: JSON.stringify({
           ...quiz.data,

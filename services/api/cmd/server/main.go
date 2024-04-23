@@ -23,6 +23,8 @@ func run(ctx context.Context) error {
 	cfg := api.HTTPConfig{
 		Host: os.Getenv("HOST"),
 		Port: os.Getenv("PORT"),
+		AllowedOrigins: os.Getenv("CORS_ALLOWED_ORIGINS"),
+		APIKey: os.Getenv("API_KEY"),
 	}
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)

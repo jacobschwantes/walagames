@@ -15,14 +15,15 @@ import (
 
 func ServeHTTP(
 	ctx context.Context,
-	config realtime.HTTPConfig,
-	lobbyService realtime.LobbyManager,
-	apiClient realtime.APIClient,
+	cfg *realtime.HTTPConfig,
+	lc realtime.LobbyController,
+	api realtime.APIClient,
+	auth realtime.AuthTokenManager,
 ) error {
-	srv := NewServer(lobbyService, apiClient)
+	srv := NewServer(lc, api, auth, cfg)
 
 	httpServer := &http.Server{
-		Addr:    config.Host + ":" + config.Port,
+		Addr:    cfg.Host + ":" + cfg.Port,
 		Handler: *srv,
 	}
 
@@ -48,15 +49,18 @@ func ServeHTTP(
 	return nil
 }
 
-func NewServer(lobbyService realtime.LobbyManager, apiClient realtime.APIClient) *http.Handler {
+func NewServer(lc realtime.LobbyController, api realtime.APIClient, auth realtime.AuthTokenManager, cfg *realtime.HTTPConfig) *http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.Handle("/lobby/connect", authMiddleware(lobbyHandler(lobbyService, apiClient), apiClient))
+	mux.Handle("/join/{code}", internalOnly(join(lc, auth), cfg.APIKey))
+	mux.Handle("/host", internalOnly(host(api, lc, auth), cfg.APIKey))
+	mux.Handle("/connect", connect(lc, auth))
 
 	var handler http.Handler = mux
+	handler = withCors(handler, cfg.AllowedOrigins)
 	return &handler
 }

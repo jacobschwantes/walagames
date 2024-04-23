@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"time"
 
 	realtime "github.com/jacobschwantes/quizblitz/services/realtime/internal"
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal/apiclient"
+	"github.com/jacobschwantes/quizblitz/services/realtime/internal/api"
+	"github.com/jacobschwantes/quizblitz/services/realtime/internal/auth"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal/http"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal/lobby"
 	"github.com/joho/godotenv"
@@ -18,21 +20,24 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	srvConfig := realtime.HTTPConfig{
-		Host: os.Getenv("HOST"),
-		Port: os.Getenv("PORT"),
-	}
-
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	apiClient := apiclient.New(os.Getenv("API_URL"))
-	lobbyManager := lobby.NewManager(apiClient)
+	cfg := &realtime.HTTPConfig{
+		Host: os.Getenv("HOST"),
+		Port: os.Getenv("PORT"),
+		APIEndpoint: os.Getenv("API_ENDPOINT"),
+		APIKey: os.Getenv("API_KEY"),
+		AllowedOrigin: os.Getenv("CORS_ALLOWED_ORIGINS"),
+	}
+	api := api.NewClient(cfg.APIEndpoint, cfg.APIKey)
+	lc := lobby.NewController(api)
+	auth := auth.NewTokenManager(30 * time.Second) // tokens expire after 30 seconds
 
-	http.ServeHTTP(ctx, srvConfig, lobbyManager, apiClient)
+	http.ServeHTTP(ctx, cfg,  lc, api, auth)
 	return nil
 }
+
 
 func main() {
 	ctx := context.Background()

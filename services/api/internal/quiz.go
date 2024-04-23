@@ -31,7 +31,11 @@ type QuizMeta struct {
 	Description string `json:"description" bson:"description"`
 	Category    string `json:"category" bson:"category"`
 	Public      bool   `json:"public" bson:"public"`
-	ImageSrc    string `json:"imageSrc" bson:"imageSrc"`
+	Image       Image  `json:"image" bson:"image"`
+}
+
+type Image struct {
+	Src string `json:"src" bson:"src"`
 }
 
 type QuizVisibility string

@@ -35,7 +35,7 @@ export default async function Page() {
             <QuizForm />
           </div>
           <ul className="grid grid-cols-4 gap-3">
-            {quizList && quizList.map((quiz) => <QuizCard {...quiz} />)}
+            {quizList && quizList.map((quiz) => <QuizCard key={quiz.id} {...quiz} />)}
           </ul>
         </ScrollArea>
       </AnimatedContainer>
@@ -111,7 +111,7 @@ function QuizCardAlt({ meta, questions, stats, id }: Quiz) {
   );
 }
 
-function QuizCard({ meta, questions, stats, id }: Quiz) {
+function QuizCard({ meta, questions, stats, id, ...props }: Quiz) {
   // const backgroundGradient = useMemo(
   //   () =>
   //     `radial-gradient(circle at top, rgba(${meta.image.meta?.color.r}, ${meta.image.meta?.color.g}, ${meta.image.meta?.color.b}, 1), rgba(${meta.image.meta?.color.r}, ${meta.image.meta?.color.g}, ${meta.image.meta?.color.b}, .3))`,
@@ -119,6 +119,7 @@ function QuizCard({ meta, questions, stats, id }: Quiz) {
   // );
   return (
     <li
+      {...props}
       // style={{
       //   backgroundImage: backgroundGradient,
       // }}
@@ -135,8 +136,8 @@ function QuizCard({ meta, questions, stats, id }: Quiz) {
         <div className="relative w-full aspect-[16/8]  rounded-t-xl  overflow-hidden">
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950/60  to-transparent opacity-75"></div>
           <Image
-            objectFit="cover"
-            className=""
+            
+            className="object-cover"
             alt="preview image"
             fill
             // TODO: set these sizes for performance

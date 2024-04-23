@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal/lobby"
 
 	"log"
 	"net/http"
@@ -17,12 +16,6 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// allowedOrigin := os.Getenv("CORS_ORIGIN") // Adjust this to match your Next.js app's origin
-		// return r.Header.Get("Origin") == allowedOrigin
-		// ! This is a security risk, but it's fine for local development
-		return true
-	},
 }
 
 const (
@@ -39,13 +32,46 @@ const (
 	maxMessageSize = 512
 )
 
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
-)
 
 func UpgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	return upgrader.Upgrade(w, r, nil)
+}
+
+type client struct {
+	id    string
+	lobby realtime.Lobby
+	conn  *websocket.Conn
+	send  chan []byte
+	close chan struct{}
+}
+
+func NewClient(conn *websocket.Conn, id string, lobby realtime.Lobby) realtime.Client {
+	return &client{
+		id:    id,
+		lobby: lobby,
+		conn:  conn,
+		send:  make(chan []byte, 256),
+		close: make(chan struct{}),
+	}
+}
+
+func (c *client) Run() {
+	// make wait group or sum and pass to them
+	go c.read()
+	go c.write()
+}
+
+func (c *client) Send(msg []byte) error {
+	// TODO: validate msg or whatever
+	c.send <- msg
+	return nil
+}
+
+func (c *client) Close() error {
+	// TODO: do whatever, logging
+	close(c.close)
+	c.conn.Close()
+	return nil
 }
 
 // readPump pumps messages from the websocket connection to the lobby.
@@ -53,21 +79,20 @@ func UpgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn,
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine
-func ReadPump(c *realtime.Client) {
-	fmt.Println("read pump started for user:", c.PlayerInfo.Username)
+func (c *client) read() {
+	fmt.Println("Read routine started for client: ", c.id)
 	defer func() {
-		fmt.Println("read pump closed for user:", c.PlayerInfo.Username)
-		c.Lobby.Unregister <- c
-		c.Conn.Close()
+		c.lobby.Disconnect(c.id)
+		fmt.Println("Read closed for client: ", c.id)
 	}()
-	c.Conn.SetReadLimit(maxMessageSize)
-	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetReadLimit(maxMessageSize)
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, msgBytes, err := c.Conn.ReadMessage()
+		_, msgBytes, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				fmt.Println("error: ", err)
+				// fmt.Println("error: ", err)
 				return
 			}
 			return
@@ -80,8 +105,7 @@ func ReadPump(c *realtime.Client) {
 			return
 		}
 
-		lobby.HandlePlayerAction(c, event)
-
+		c.lobby.PushEvent(c.id, event)
 	}
 }
 
@@ -90,25 +114,24 @@ func ReadPump(c *realtime.Client) {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func WritePump(c *realtime.Client) {
-	fmt.Println("write pump started for user:", c.PlayerInfo.Username)
+func (c *client) write() {
+	fmt.Println("Write routine started for client: ", c.id)
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.Conn.Close()
-		fmt.Println("write pump closed for user:", c.PlayerInfo.Username)
+		fmt.Println("Write closed for client: ", c.id)
 	}()
 	for {
 		select {
-		case message, ok := <-c.Send:
-			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The lobby closed the channel.
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			w, err := c.Conn.NextWriter(websocket.TextMessage)
+			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return
 			}
@@ -127,11 +150,11 @@ func WritePump(c *realtime.Client) {
 			if err := w.Close(); err != nil {
 				return
 			}
-		case <-c.Close:
+		case <-c.close:
 			return
 		case <-ticker.C:
-			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}

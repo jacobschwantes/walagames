@@ -2,7 +2,11 @@
 const nextConfig = {
     transpilePackages: ["@repo/ui"],
     images: {
-        domains: ["images.jsch.me"],
+        remotePatterns: [
+            {
+                hostname: 'images.jsch.me'
+            }
+        ]
     }
 };
 

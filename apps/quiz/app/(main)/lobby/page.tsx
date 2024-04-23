@@ -20,22 +20,25 @@ export default function Page({ searchParams }: PageProps) {
       if (!server && !connectionStr) {
         try {
           console.log("calling create lobby");
-          const response = await createLobby();
-          if ("error" in response) {
-            throw new Error(response.error);
-          }
+          const response = await fetch("/api/lobby/host", {
+            method: "POST",
+            body: JSON.stringify({
+              quizID: id,
+            }),
+          })
+            .then((res) => res.json())
+            .catch((err) => console.log(err));
+          // if ("error" in response) {
+          //   throw new Error(response.error);
+          // }
           const { server, token, username } = response;
           setUsername(username);
-          setConnectionStr(
-            `ws://${server}/lobby/connect?token=${token}&id=${id}`
-          );
+          setConnectionStr(`ws://${server}/connect?token=${token}`);
         } catch (e) {
           e instanceof Error ? console.error(e.message) : console.error(e);
         }
       } else {
-        setConnectionStr(
-          `ws://${server}/lobby/connect?token=${token}&code=${code}`
-        );
+        setConnectionStr(`ws://${server}/connect?token=${token}`);
         router.replace("/lobby");
       }
     };

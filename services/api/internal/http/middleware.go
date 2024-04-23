@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"net/http"
-	"os"
 )
 
 type contextKey string
@@ -12,11 +11,14 @@ const userIDContextKey contextKey = "userID"
 
 func withUserID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if userID := r.Header.Get("X-User-ID"); userID != "" {
-			ctx := context.WithValue(r.Context(), userIDContextKey, userID)
-			next.ServeHTTP(w, r.WithContext(ctx))
+		userID := r.Header.Get("X-User-ID")
+		if userID == "" {
+			http.Error(w, "X-User-ID header missing", http.StatusBadRequest)
+			return
 		}
-		http.Error(w, "X-User-ID header missing", http.StatusBadRequest)
+
+		ctx := context.WithValue(r.Context(), userIDContextKey, userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -28,9 +30,9 @@ func getUserID(ctx context.Context) string {
 	return userID
 }
 
-func internalOnly(next http.Handler) http.Handler {
+func internalOnly(next http.Handler, apiKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !isInternal(r) {
+		if !isInternal(r, apiKey) {
 			http.NotFound(w, r)
 			return
 		}
@@ -38,16 +40,16 @@ func internalOnly(next http.Handler) http.Handler {
 	})
 }
 
-func isInternal(r *http.Request) bool {
+func isInternal(r *http.Request, apiKey string) bool {
 	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
-		return authHeader == os.Getenv("INTERNAL_API_KEY")
+		return authHeader == apiKey
 	}
 	return false
 }
 
-func withCors(next http.Handler) http.Handler {
+func withCors(next http.Handler, allowedOrigins string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
+		w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 

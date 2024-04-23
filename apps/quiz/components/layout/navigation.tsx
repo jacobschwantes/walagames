@@ -38,8 +38,8 @@ export const Navigation = () => {
     <div className="flex flex-col items-center gap-1.5">
       {routes.map((route) => (
         <NavButton
-          route={route}
           key={route.name}
+          route={route}
           active={
             route.href === "/"
               ? route.href === pathname
@@ -50,7 +50,7 @@ export const Navigation = () => {
     </div>
   );
 };
-function NavButton({ route, key, active, ...props }) {
+function NavButton({ route, active, ...props }) {
   return (
     <Link
       href={route.href}
@@ -59,7 +59,6 @@ function NavButton({ route, key, active, ...props }) {
         " w-full px-4 py-3 rounded-lg relative overflow-hidden flex items-center transition-all duration-300 group",
         active ? "bg-[#262b35] brightness-110" : "hover:bg-[#21252e]"
       )}
-      key={route.name}
     >
       <span
         className={cn(

@@ -35,13 +35,13 @@ function signOut(request: NextRequest) {
 
 function shouldUpdateToken(tokens: BackendTokens) {
   // TODO: Implement a better way to check if the token is expired
-  if (Date.now() < (tokens.expires_at - 400) * 1000) {
-    // console.log("TOKEN IS NOT EXPIRED");
-    // console.log(
-    //   "TOKEN EXPIRES IN",
-    //   Math.floor((tokens.expires_at * 1000 - Date.now()) / 60 / 1000),
-    //   "MINUTES"
-    // );
+  if (Date.now() < (tokens.expires_at - 500) * 1000) {
+    console.log("TOKEN IS NOT EXPIRED");
+    console.log(
+      "TOKEN EXPIRES IN",
+      Math.floor((tokens.expires_at * 1000 - Date.now()) / 60 / 1000),
+      "MINUTES"
+    );
     return false;
   }
   console.log("TOKEN IS EXPIRED, REFRESHING");
@@ -51,7 +51,10 @@ function shouldUpdateToken(tokens: BackendTokens) {
 export const middleware: NextMiddleware = async (request: NextRequest) => {
   const jwt = await getToken({ req: request });
 
-  if (!jwt) return signOut(request);
+  if (!jwt) {
+    console.log("calling signout");
+    return signOut(request);
+  }
 
   let response = NextResponse.next();
 
@@ -88,29 +91,36 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
 
 async function refreshToken(token: JWT): Promise<BackendTokens> {
   console.log("CALLING TOKEN REFRESH ENDPOINT");
+
+  const params = new URLSearchParams();
+  params.append("client_id", process.env.FUSIONAUTH_CLIENT_ID);
+  params.append("client_secret", process.env.FUSIONAUTH_CLIENT_SECRET);
+  params.append("grant_type", "refresh_token");
+  params.append("access_token", token.access_token);
+  params.append("refresh_token", token.refresh_token);
+
+
   const response = await fetch(process.env.FUSIONAUTH_URL + "/oauth2/token", {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: JSON.stringify({
-      client_id: process.env.FUSIONAUTH_CLIENT_ID,
-      client_secret: process.env.FUSIONAUTH_CLIENT_SECRET,
-      grant_type: "refresh_token",
-      access_token: token.access_token,
-      refresh_token: token.refresh_token,
-    }),
+    body: params,
     method: "POST",
-  });
+  })
+    .then((res) => res.json())
+    .catch((e) => console.log(e));
+  
+  console.log(response)
 
-  const tokens = await response.json();
+  if (!response.access_token) {
+    throw new Error("failed to refresh")
+  }
 
-  if (!response.ok) throw tokens;
-  console.log("TOKENS REFRESHED")
+  console.log("TOKENS REFRESHED");
   return {
-    ...token, // Keep the previous token properties
-    access_token: tokens.access_token,
-    expires_at: Math.floor(Date.now() / 1000) + tokens.expires_in,
+    access_token: response.access_token,
+    expires_at: Math.floor(Date.now() / 1000) + response.expires_in,
     // Fall back to old refresh token, but note that
     // many providers may only allow using a refresh token once.
-    refresh_token: tokens.refresh_token ?? token.refresh_token,
+    refresh_token: response.refresh_token ?? token.refresh_token,
   };
 }
 

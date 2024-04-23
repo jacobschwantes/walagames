@@ -1,5 +1,6 @@
 import { twMerge } from "tailwind-merge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Player, PlayerRole } from "@/lib/types";
 
 interface ScoreboardProps {
   username: string;
@@ -11,10 +12,7 @@ function Scoreboard({ username, lobbyState }: ScoreboardProps) {
     <div className="flex min-h-full flex-col border rounded-lg p-2 max-w-xs w-full flex-1 gap-2">
       <h2 className="font-medium">Leaderboard</h2>
       <ol className="gap-2 flex flex-col">
-        {lobbyState.gameState.players &&
-          lobbyState.gameState.players
-            .sort((a, b) => b.score - a.score)
-            .map((player, idx) => (
+        {lobbyState.players.map((player: Player, idx: number) => (
               <li
                 className="flex items-center gap-2 justify-between"
                 key={player.username}
@@ -31,7 +29,7 @@ function Scoreboard({ username, lobbyState }: ScoreboardProps) {
                     <AvatarImage
                       alt="avatar"
                       src={
-                        player.imageURL ||
+                        player.image ||
                         `https://api.dicebear.com/7.x/notionists/svg?seed=${player.username}`
                       }
                     />
@@ -40,7 +38,7 @@ function Scoreboard({ username, lobbyState }: ScoreboardProps) {
                   </Avatar>
                   {player.username === username ? "You" : player.username}
                 </h3>
-                <span className="block text-sm">{player.score}</span>
+                {/* <span className="block text-sm">{player.score}</span> */}
               </li>
             ))}
       </ol>
