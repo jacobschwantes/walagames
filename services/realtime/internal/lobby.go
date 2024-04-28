@@ -1,16 +1,15 @@
 package realtime
 
+import "github.com/gorilla/websocket"
+
 type Lobby interface {
-	Player(userID string) (*Player, error)
-	Players() []*Player
+	Player(userID string) (Player, error)
+	Players() []*PlayerInfo
 	Code() string
-	Connect(userID string, c Client) error
-	Disconnect(id string)
-	RegisterPlayer(p *Player) error
-	Run()
-	SetGame(g Game)
-	PushEvent(userID string, e Event)
-	Broadcast(msg []byte) 
+	Connect(conn *websocket.Conn, p Player)
+	Register(p Player) error
+	Run(lm LobbyManager)
+	Broadcast(msg []byte)
 }
 
 type LobbyState struct {
@@ -20,9 +19,9 @@ type LobbyState struct {
 	Settings *GameSettings `json:"settings,omitempty"`
 }
 
-type LobbyController interface {
+type LobbyManager interface {
 	Lobby(code string) (Lobby, error)
-	CreateLobby() (Lobby, error)
+	CreateLobby(g Game) (Lobby, string, error)
 	CloseLobby(code string, message string) error
 }
 
@@ -37,11 +36,13 @@ const (
 const (
 	SUBMIT_ANSWER = "SUBMIT_ANSWER"
 	START_GAME    = "START_GAME"
+	CLOSE_LOBBY   = "CLOSE_LOBBY"
 )
 
 type Event struct {
 	Type    string      `json:"type"`
 	Payload interface{} `json:"payload"`
+	Player  Player
 }
 
 type LobbySettings struct {

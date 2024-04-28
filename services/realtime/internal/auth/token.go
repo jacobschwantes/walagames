@@ -73,7 +73,6 @@ func (m *authTokenManager) cleanupExpiredTokens() {
 	ticker := time.NewTicker(time.Minute)
 	for range ticker.C {
 		m.lock.Lock()
-
 		for token, entry := range m.tokens {
 			if time.Now().Compare(entry.ExpiresAt) <= 0 {
 				delete(m.tokens, token)

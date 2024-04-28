@@ -1,22 +1,18 @@
-package websocket
+package lobby
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+
 	// "os"
 
 	"github.com/gorilla/websocket"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
 
 	"log"
-	"net/http"
 	"time"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 const (
 	// Time allowed to write a message to the peer.
@@ -32,46 +28,50 @@ const (
 	maxMessageSize = 512
 )
 
-
-func UpgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
-	return upgrader.Upgrade(w, r, nil)
-}
+var (
+	newline = []byte{'\n'}
+	space   = []byte{' '}
+)
 
 type client struct {
-	id    string
-	lobby realtime.Lobby
-	conn  *websocket.Conn
-	send  chan []byte
-	close chan struct{}
+	Player realtime.Player
+	lobby  *lobby
+	conn   *websocket.Conn
+	send   chan []byte
+	cancel context.CancelFunc
 }
 
-func NewClient(conn *websocket.Conn, id string, lobby realtime.Lobby) realtime.Client {
+func newClient(conn *websocket.Conn, lobby *lobby, player realtime.Player) *client {
 	return &client{
-		id:    id,
-		lobby: lobby,
-		conn:  conn,
-		send:  make(chan []byte, 256),
-		close: make(chan struct{}),
+		Player: player,
+		lobby:  lobby,
+		conn:   conn,
+		send:   make(chan []byte, 256),
 	}
 }
 
-func (c *client) Run() {
-	// make wait group or sum and pass to them
-	go c.read()
-	go c.write()
+func (c *client) Run(lobbyCtx context.Context) {
+	ctx, cancel := context.WithCancel(lobbyCtx)
+	c.cancel = cancel
+
+	ready := make(chan bool, 2)
+
+	go c.read(ctx, ready)
+	go c.write(ctx, ready)
+
+	// block return until both go routines start
+	<-ready
+	<-ready
+	c.Player.ChangeStatus(realtime.StatusConnected)
 }
 
 func (c *client) Send(msg []byte) error {
-	// TODO: validate msg or whatever
 	c.send <- msg
 	return nil
 }
 
-func (c *client) Close() error {
-	// TODO: do whatever, logging
-	close(c.close)
-	c.conn.Close()
-	return nil
+func (c *client) Close() {
+	c.cancel()
 }
 
 // readPump pumps messages from the websocket connection to the lobby.
@@ -79,33 +79,43 @@ func (c *client) Close() error {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine
-func (c *client) read() {
-	fmt.Println("Read routine started for client: ", c.id)
+func (c *client) read(ctx context.Context, ready chan<- bool) {
+	fmt.Println("Read routine started: ", c.Player.ID())
+	ready <- true
 	defer func() {
-		c.lobby.Disconnect(c.id)
-		fmt.Println("Read closed for client: ", c.id)
+		c.Player.ChangeStatus(realtime.StatusDisconnected)
+		c.conn.Close()
+		c.Close()
+		fmt.Println("Read routine exited: ", c.Player.ID())
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, msgBytes, err := c.conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				// fmt.Println("error: ", err)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			_, msgBytes, err := c.conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					// fmt.Println("error: ", err)
+					return
+				}
 				return
 			}
-			return
+
+			var event realtime.Event
+
+			if err := json.Unmarshal(msgBytes, &event); err != nil {
+				log.Printf("Error un-marshalling message: %v", err)
+				return
+			}
+
+			event.Player = c.Player
+
+			c.lobby.event <- &event
 		}
-
-		var event realtime.Event
-
-		if err := json.Unmarshal(msgBytes, &event); err != nil {
-			log.Printf("Error un-marshalling message: %v", err)
-			return
-		}
-
-		c.lobby.PushEvent(c.id, event)
 	}
 }
 
@@ -114,12 +124,14 @@ func (c *client) read() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *client) write() {
-	fmt.Println("Write routine started for client: ", c.id)
+func (c *client) write(ctx context.Context, ready chan<- bool) {
+	fmt.Println("Write routine started: ", c.Player.ID())
+	ready <- true
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		fmt.Println("Write closed for client: ", c.id)
+		c.conn.Close()
+		fmt.Println("Write routine exited: ", c.Player.ID())
 	}()
 	for {
 		select {
@@ -150,7 +162,7 @@ func (c *client) write() {
 			if err := w.Close(); err != nil {
 				return
 			}
-		case <-c.close:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))

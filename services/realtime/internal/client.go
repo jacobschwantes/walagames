@@ -1,5 +1,7 @@
 package realtime
 
+import "context"
+
 // import (
 // 	"github.com/gorilla/websocket"
 // )
@@ -12,8 +14,7 @@ package realtime
 // }
 
 type Client interface {
-	// ID() string
 	Send(msg []byte) error
-	Run()
-	Close() error
+	Run(ctx context.Context)
+	Close()
 }

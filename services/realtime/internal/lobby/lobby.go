@@ -1,133 +1,138 @@
 package lobby
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
 )
 
 type lobby struct {
 	code       string
-	players    map[string]*realtime.Player
-	connect    chan *realtime.Client
-	disconnect chan *realtime.Client
-	register   chan *realtime.Player
-	unregister chan *realtime.Player
+	players    map[realtime.Player]*client
+	broadcast  chan []byte
+	connect    chan *client
+	register   chan realtime.Player
 	event      chan *realtime.Event
 	game       realtime.Game
 }
 
-func (l *lobby) Player(userID string) (*realtime.Player, error) {
-	// TODO: look up player if not allowed in, return nil + error msg
-	if player, exists := l.players[userID]; exists {
-		return player, nil
+func (l *lobby) Player(id string) (realtime.Player, error) {
+	for p := range l.players {
+		if p.ID() == id {
+			if p.Status() == realtime.StatusKicked {
+				return nil, errors.New("player was kicked")
+			}
+			return p, nil
+		}
 	}
-	return nil, fmt.Errorf("player does not exist")
+	return nil, errors.New("player does not exist")
 }
 
-func (l *lobby) Players() []*realtime.Player {
-	players := []*realtime.Player{}
-	for _, player := range l.players {
-		players = append(players, player)
+func (l *lobby) Players() []*realtime.PlayerInfo {
+	playerList := []*realtime.PlayerInfo{}
+	for player := range l.players {
+		if player.Status() != realtime.StatusKicked {
+			playerList = append(playerList, player.Info())
+		}
 	}
-	return players
+	return playerList
 }
 
 func (l *lobby) Code() string {
-	return l.code
+	return l.code // * safe - it will never change
 }
 
-func (l *lobby) SetGame(g realtime.Game) {
-	l.game = g
+func (l *lobby) Connect(conn *websocket.Conn, player realtime.Player) {
+	client := newClient(conn, l, player)
+	l.connect <- client
 }
 
-func (l *lobby) Connect(userID string, c realtime.Client) error {
-	// todo: validation (check routes for cases we need to account for)
-	player, err := l.Player(userID)
-	if err != nil {
-		return err
-	}
-
-	c.Run()
-
-	player.Client = c
-	player.Status = realtime.StatusConnected
-	type stateUpdate struct {
-		Players []*realtime.Player `json:"players"`
-		Code    string             `json:"code"`
-	}
-
-	msgBytes, _ := json.Marshal(&realtime.Event{
-		Type: realtime.LOBBY_STATE,
-		Payload: &stateUpdate{
-			Players: l.Players(),
-			Code:    l.code,
-		},
-	})
-
-	c.Send(msgBytes)
-
-	msgBytes, _ = json.Marshal(&realtime.Event{
-		Type:    realtime.MESSAGE,
-		Payload: "Welcome to the lobby!",
-	})
-
-	c.Send(msgBytes)
-
+func (l *lobby) Register(player realtime.Player) error {
+	// todo: check if there is room in the lobby
+	l.register <- player
 	return nil
-}
-
-func (l *lobby) Disconnect(userID string) {
-	player, err := l.Player(userID)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	player.Client.Close()
-
-	player.Status = realtime.StatusDisconnected
-	// player.Client = nil // !scary
-}
-
-func (l *lobby) RegisterPlayer(p *realtime.Player) error {
-	// todo: validation (check routes for cases we need to account for)
-	l.players[p.ID] = p
-	return nil
-}
-
-// TODO
-func (l *lobby) PushEvent(userID string, e realtime.Event) {
-	switch e.Type {
-	case realtime.START_GAME:
-		go l.game.Run()
-	default:
-		fmt.Println("unknown event")
-	}
 }
 
 func (l *lobby) Broadcast(msg []byte) {
-	for _, player := range l.players {
-		player.Client.Send(msg)
+	l.broadcast <- msg
+}
+
+func (l *lobby) Run(lm realtime.LobbyManager) {
+	fmt.Println("Lobby routine started: ", l.code)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ticker := time.NewTicker(time.Second * 30)
+
+	defer func() {
+		fmt.Println("Lobby routine exited: ", l.code)
+		lm.CloseLobby(l.code, "lobby routine exited")
+	}()
+	for {
+		select {
+		case <-ctx.Done():
+			for _, c := range l.players {
+				c.Close()
+			}
+			return
+		case player := <-l.register:
+			l.players[player] = nil
+			fmt.Println("Registered player: ", player.ID())
+		case client := <-l.connect:
+			client.Run(ctx)
+			l.players[client.Player] = client
+			
+			fmt.Printf("%s connected: %s\n", client.Player.Info().Role, client.Player.Info().Profile.Username)
+
+			msg := l.state(realtime.LOBBY_STATE)
+			client.Send(msg)
+		case msg := <-l.broadcast:
+			for _, client := range l.players {
+				client.Send(msg)
+			}
+		case e := <-l.event:
+			fmt.Printf("recv event of type %s from player %s\n", e.Type, e.Player.ID())
+			switch e.Type {
+			case realtime.START_GAME:
+				go l.game.Run(ctx, l)
+			case realtime.CLOSE_LOBBY:
+				cancel()
+			default:
+				l.game.HandleEvent(e)
+			}
+		case <-ticker.C:
+			for p := range l.players {
+				fmt.Printf("%s: %s is %s\n", p.Info().Role, p.Info().Profile.Username, p.Status())
+			}
+		}
+
 	}
 }
 
-// TODO
-func (l *lobby) Run() {
-
-	for {
-		select {
-		case client := <-l.connect:
-			fmt.Println(client)
-
-			// case client := <-l.Disconnect:
-
-			// case player := <-l.Register:
-
-			// case player := <-l.Unregister:
-
-			// case player := <-l.Kick:
-
-		}
+// * opportunity for generic ? or veratic
+func (l *lobby) state(t string) []byte {
+	type stateUpdate struct {
+		Players []*realtime.PlayerInfo `json:"players"`
+		Code    string                 `json:"code"`
 	}
+
+	switch t {
+	case realtime.LOBBY_STATE:
+		msgBytes, _ := json.Marshal(&realtime.Event{
+			Type: realtime.LOBBY_STATE,
+			Payload: &stateUpdate{
+				Players: l.Players(),
+				Code:    l.code,
+			},
+		})
+		return msgBytes
+	default:
+		fmt.Println("unknown message type: ", t)
+		return nil
+	}
+
 }

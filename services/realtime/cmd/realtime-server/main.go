@@ -24,20 +24,19 @@ func run(ctx context.Context) error {
 	defer cancel()
 
 	cfg := &realtime.HTTPConfig{
-		Host: os.Getenv("HOST"),
-		Port: os.Getenv("PORT"),
+		Host:        os.Getenv("HOST"),
+		Port:        os.Getenv("PORT"),
 		APIEndpoint: os.Getenv("API_ENDPOINT"),
-		APIKey: os.Getenv("API_KEY"),
-		AllowedOrigin: os.Getenv("CORS_ALLOWED_ORIGINS"),
+		APIKey:      os.Getenv("API_KEY"),
+		// AllowedOrigin: os.Getenv("CORS_ALLOWED_ORIGINS"),
 	}
 	api := api.NewClient(cfg.APIEndpoint, cfg.APIKey)
-	lc := lobby.NewController(api)
-	auth := auth.NewTokenManager(30 * time.Second) // tokens expire after 30 seconds
+	lm := lobby.NewManager(api)
+	atm := auth.NewTokenManager(30 * time.Second) // tokens expire after 30 seconds
 
-	http.ServeHTTP(ctx, cfg,  lc, api, auth)
+	http.ServeHTTP(ctx, cfg, lm, api, atm)
 	return nil
 }
-
 
 func main() {
 	ctx := context.Background()

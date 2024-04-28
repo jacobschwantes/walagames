@@ -16,11 +16,23 @@ const (
 	StatusKicked       PlayerStatus = "KICKED"
 )
 
-type Player struct {
-	ID       string       `json:"id"`
-	Role     PlayerRole   `json:"role"`
-	Username string       `json:"username"`
-	Image    string       `json:"image"`
-	Client   Client       `json:"-"`
-	Status   PlayerStatus `json:"status"`
+type PlayerProfile struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Image    string `json:"image"`
+}
+
+type PlayerInfo struct {
+	Status  PlayerStatus  `json:"status"`
+	Role    PlayerRole    `json:"role"`
+	Profile PlayerProfile `json:"profile"`
+}
+
+type Player interface {
+	Status() PlayerStatus
+	ChangeStatus(status PlayerStatus)
+	Role() PlayerRole
+	ChangeRole(r PlayerRole)
+	ID() string
+	Info() *PlayerInfo
 }

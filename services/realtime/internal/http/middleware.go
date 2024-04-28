@@ -24,7 +24,7 @@ func isInternal(r *http.Request, apiKey string) bool {
 
 func withCors(next http.Handler, allowedOrigins string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+		w.Header().Set("Access-Control-Allow-Origin", "quizblitz.local:3000")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 

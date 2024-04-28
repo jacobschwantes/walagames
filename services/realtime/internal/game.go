@@ -1,9 +1,11 @@
 package realtime
 
+import "context"
+
 
 type Game interface {
-	Run()
-	HandleEvent(*Event)
+	Run(ctx context.Context, l Lobby)
+	HandleEvent(e *Event)
 }
 
 

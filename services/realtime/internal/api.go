@@ -2,12 +2,6 @@ package realtime
 
 import "time"
 
-type UserInfo struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Image    string `json:"image"`
-}
-
 type Quiz struct {
 	ID        string     `json:"id,omitempty" bson:"_id,omitempty"`
 	OwnerID   string     `json:"owner_id" bson:"ownerID"`

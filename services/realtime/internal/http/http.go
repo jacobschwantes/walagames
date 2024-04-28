@@ -16,11 +16,11 @@ import (
 func ServeHTTP(
 	ctx context.Context,
 	cfg *realtime.HTTPConfig,
-	lc realtime.LobbyController,
+	lm realtime.LobbyManager,
 	api realtime.APIClient,
-	auth realtime.AuthTokenManager,
+	atm realtime.AuthTokenManager,
 ) error {
-	srv := NewServer(lc, api, auth, cfg)
+	srv := NewServer(lm, api, atm, cfg)
 
 	httpServer := &http.Server{
 		Addr:    cfg.Host + ":" + cfg.Port,
@@ -49,18 +49,23 @@ func ServeHTTP(
 	return nil
 }
 
-func NewServer(lc realtime.LobbyController, api realtime.APIClient, auth realtime.AuthTokenManager, cfg *realtime.HTTPConfig) *http.Handler {
+func NewServer(
+	lm realtime.LobbyManager,
+	api realtime.APIClient,
+	atm realtime.AuthTokenManager,
+	cfg *realtime.HTTPConfig,
+) *http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.Handle("/join/{code}", internalOnly(join(lc, auth), cfg.APIKey))
-	mux.Handle("/host", internalOnly(host(api, lc, auth), cfg.APIKey))
-	mux.Handle("/connect", connect(lc, auth))
+	mux.Handle("/join/{code}", internalOnly(join(lm, atm), cfg.APIKey))
+	mux.Handle("/host", internalOnly(host(api, lm, atm), cfg.APIKey))
+	mux.Handle("/connect", connect(lm, atm))
 
 	var handler http.Handler = mux
-	handler = withCors(handler, cfg.AllowedOrigins)
+	// handler = withCors(handler, cfg.AllowedOrigins)
 	return &handler
 }
