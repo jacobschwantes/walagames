@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal"
+	"golang.org/x/time/rate"
 
 	"log"
 	"time"
@@ -91,6 +92,9 @@ func (c *client) read(ctx context.Context, ready chan<- bool) {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+
+	limiter := rate.NewLimiter(0.5, 5) 
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -104,17 +108,23 @@ func (c *client) read(ctx context.Context, ready chan<- bool) {
 				}
 				return
 			}
+			if limiter.Allow() {
+				var event realtime.Event
+				if err := json.Unmarshal(msgBytes, &event); err != nil {
+					log.Printf("Error un-marshalling message: %v", err)
+					return
+				}
 
-			var event realtime.Event
+				event.Player = c.Player
 
-			if err := json.Unmarshal(msgBytes, &event); err != nil {
-				log.Printf("Error un-marshalling message: %v", err)
-				return
+				c.lobby.event <- &event
+
+				fmt.Println("sent event from client")
+
+			} else {
+				fmt.Println("dropped event")
 			}
 
-			event.Player = c.Player
-
-			c.lobby.event <- &event
 		}
 	}
 }

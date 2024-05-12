@@ -31,7 +31,7 @@ type QuizMeta struct {
 	Description string `json:"description" bson:"description"`
 	Category    string `json:"category" bson:"category"`
 	Public      bool   `json:"public" bson:"public"`
-	ImageSrc    string `json:"imageSrc" bson:"image"`
+	Image       string `json:"image" bson:"image"`
 }
 
 type APIClient interface {

@@ -2,13 +2,7 @@
 
 import { LobbyState, PlayerAction, PlayerRole } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { GearIcon } from "@radix-ui/react-icons";
-
-import { useEffect, useMemo, useState } from "react";
-
-import { twMerge } from "tailwind-merge";
-import { CountdownTimer } from "./timer";
-import ChatWindow from "../lobby/chat-window";
+import {  useState } from "react";
 import { Scoreboard } from "./scoreboard";
 
 interface WebSocketClientProps {
@@ -24,31 +18,6 @@ const GameClient: React.FC<WebSocketClientProps> = ({
   onClose,
   username,
 }) => {
-  const [submittedAnswer, setSubmittedAnswer] = useState<string>("");
-
-  const role = useMemo(
-    () => lobbyState.players.find((p) => p.username === username)?.role,
-    [lobbyState.players, username]
-  );
-
-  // useEffect(() => {
-  //   setSubmittedAnswer("");
-  // }, [lobbyState.gameState.state?.question]);
-
-  // const sendMessage = (message: string) => {
-  //   sendEvent(PlayerAction.SEND_MESSAGE, message);
-  // };
-
-  // const submitAnswer = (answer: string) => {
-  //   setSubmittedAnswer(answer);
-  //   sendEvent(PlayerAction.SUBMIT_ANSWER, answer);
-  // };
-
-  // useEffect(() => {
-  //   if (lobbyState.exited) {
-  //     onClose();
-  //   }
-  // }, [lobbyState.exited, onClose]);
 
   return (
     <div className="flex-1 flex flex-col justify-between h-full w-full gap-2 p-6 ">
@@ -107,25 +76,29 @@ const GameClient: React.FC<WebSocketClientProps> = ({
           </div>
         ) : ( */}
           <div className="flex-1 border rounded-lg flex flex-col gap-16 justify-between p-6">
-            {role === PlayerRole.HOST ? (
-              <div>
+            {lobbyState.role === PlayerRole.HOST ? (
+              <div className="flex gap-2">
                 <Button
                   onClick={() => sendEvent(PlayerAction.START_GAME, "merch")}
                 >
                   Start Game
+                </Button>
+                <Button
+                  onClick={() => sendEvent(PlayerAction.CLOSE_LOBBY, "merch")}
+                >
+                  Close Lobby
+                </Button>
+                <Button
+                  onClick={() => sendEvent(PlayerAction.SUBMIT_ANSWER, "merch")}
+                >
+                  send event
                 </Button>
               </div>
             ) : (
               <h2>Waiting for the host to start the game...</h2>
             )}
           </div>
-{/*   
-        <ChatWindow
-          playerCount={lobbyState?.gameState?.players?.length || 0}
-          username={username}
-          sendMessage={sendMessage}
-          messages={lobbyState.messages}
-        /> */}
+
       </div>
     </div>
   );

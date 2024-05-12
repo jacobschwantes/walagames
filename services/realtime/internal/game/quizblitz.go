@@ -39,6 +39,7 @@ func (qb *quizblitz) Run(ctx context.Context, l realtime.Lobby) {
 			return
 		case e := <-qb.event:
 			fmt.Printf("recv event in game routine of type %s from player %s\n", e.Type, e.Player.ID())
+			l.Broadcast(msg("we got your event!"))
 		case <-ticker.C:
 			l.Broadcast(msg("Hello from the game routine!"))
 		}
@@ -46,8 +47,14 @@ func (qb *quizblitz) Run(ctx context.Context, l realtime.Lobby) {
 
 }
 
-func (qb *quizblitz) HandleEvent(e *realtime.Event) {
-	qb.event <- e
+func (qb *quizblitz) PushEvent(e *realtime.Event) {
+	select {
+	case qb.event <- e:
+		fmt.Println("sent event to chan in game")
+	default:
+		fmt.Println("dropped event in game chan")
+	}
+
 }
 
 func msg(m string) []byte {

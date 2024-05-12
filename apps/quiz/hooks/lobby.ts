@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { LobbyState, PlayerAction, LobbyEvent, PlayerRole } from "@/lib/types";
 
@@ -15,20 +15,23 @@ export const useLobby = (
       ws.current = new WebSocket(url);
 
       ws.current.onopen = () => {
-        toast("Connection started")
+        // toast("Connection started")
       };
 
       ws.current.onmessage = (event) => {
-        console.log("Received message from server:", JSON.stringify(event.data, null, 2));
+        console.log(
+          "Received message from server:",
+          JSON.stringify(event.data, null, 2)
+        );
         const { type, payload } = JSON.parse(event.data);
-        console.log("type: ", type)
-        console.log("payload: ", payload)
+        console.log("type: ", type);
+        console.log("payload: ", payload);
         handleEvent(type, payload);
       };
 
       ws.current.onclose = (e) => {
         setLobbyState(null);
-        toast.error("Disconnected from lobby");
+        // toast.error("Disconnected from lobby");
       };
 
       ws.current.onerror = () => {
@@ -45,26 +48,28 @@ export const useLobby = (
     };
   }, [url]);
 
-  const sendEvent = (type: PlayerAction, payload: any) => {
-    if (ws.current) {
-      ws.current.send(JSON.stringify({ type, payload }));
-    }
-  };
+  const sendEvent = useCallback(
+    (type: PlayerAction, payload: any) => {
+      if (ws.current) {
+        ws.current.send(JSON.stringify({ type, payload }));
+      }
+    },
+    [ws.current]
+  );
 
-  const handleEvent = (type: LobbyEvent, payload: any) => {
+  const handleEvent = useCallback((type: LobbyEvent, payload: any) => {
     switch (type) {
       case LobbyEvent.MESSAGE:
         toast(payload);
         break;
       case LobbyEvent.LOBBY_STATE:
-
         setLobbyState(payload);
         break;
       default:
         console.log(`Unhandled event type: ${type}`);
         break;
     }
-  };
+  }, []);
 
   return [lobbyState, sendEvent];
 };

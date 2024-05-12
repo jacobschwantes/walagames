@@ -11,6 +11,7 @@ const InputOTP = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof OTPInput>
 >(({ className, ...props }, ref) => (
   <OTPInput
+    spellCheck={false}
     ref={ref}
     containerClassName={cn("flex items-center gap-2", className)}
     {...props}
@@ -35,7 +36,7 @@ const InputOTPSlot = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "relative flex h-16 w-16 items-center justify-center border-input text-4xl transition-all ",
+        "relative flex items-center justify-center border-input text-4xl transition-all ",
         isActive && "z-10 ring-2 ring-offset-background ring-ring",
         className
       )}

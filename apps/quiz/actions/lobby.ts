@@ -3,9 +3,9 @@ import { authOptions } from "@/auth";
 import { getServerSession } from "next-auth";
 
 type SuccessResponse = {
-  server: string;
   token: string;
-  username: string;
+  endpoint: string;
+  code: string
 };
 
 type ErrorResponse = {
@@ -13,37 +13,46 @@ type ErrorResponse = {
 };
 
 type LobbyResponse = SuccessResponse | ErrorResponse;
-/**
- * Initiates the creation of a lobby.
- * Calls the API to obtain a short-lived auth token and the realtime server endpoint.
- * The auth token and server endpoint are used for setting up the lobby WebSocket connection.
- *
- * @returns {Promise<LobbyResponse>} An object containing the server endpoint and the auth token,
- * or an error message if the session or user ID is missing.
- */
-export const createLobby = async (): Promise<LobbyResponse> => {
+
+export const createLobby = async (quizID: string): Promise<LobbyResponse> => {
+  const endpoint = "localhost:8081";
+
   const session = await getServerSession(authOptions);
-  if (!session || !session.user.id) {
+  if (!session) {
     console.error("no session");
     return { error: "no session" };
   }
 
   try {
-    const response = await fetch(`${process.env.API_ENDPOINT}/lobby/host`, {
+    const response = await fetch(`http://${endpoint}/host`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.API_KEY}`,
+        Authorization: `${process.env.API_KEY}`,
       },
       body: JSON.stringify({
-        userid: session.user.id,
+        user: {
+          id: session.user.id,
+          username: session.user?.name,
+          image: session.user.image,
+        },
+        quizID,
       }),
     });
-    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(data.error || "Unknown error");
+      const res = await response.text();
+      console.log(res);
+      throw new Error(res);
     }
-    return {...data, username: session.user.name}
+
+    const { token, code } = await response.json();
+
+    return {
+      token,
+      endpoint,
+      code
+    };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",
@@ -51,41 +60,44 @@ export const createLobby = async (): Promise<LobbyResponse> => {
   }
 };
 
-// TODO: Create a join lobby action
-// Need to figure out a better system that deduplicates logic
-// Including system for handling the migration to the lobby each a host vs join case
-// /lobby for actual lobby with /join?code= or /host
-
 export const joinLobby = async (code: string): Promise<LobbyResponse> => {
+  const endpoint = "localhost:8081";
+
   const session = await getServerSession(authOptions);
-  if (!session || !session.user.id) {
+  if (!session) {
     console.error("no session");
     return { error: "no session" };
   }
 
   try {
-    const response = await fetch(`${process.env.API_ENDPOINT}/lobby`, {
+    const response = await fetch(`http://${endpoint}/join/${code}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.API_KEY}`,
+        Authorization: `${process.env.API_KEY}`,
       },
       body: JSON.stringify({
-        userid: session.user.id,
-        code,
+        user: {
+          id: session.user.id,
+          username: session.user?.name,
+          image: session.user.image,
+        },
       }),
     });
 
-    
-
-    let data;
-    if (response.ok) {
-      data = await response.json();
-    } else {
-      throw new Error((await response.text()) || "Unknown error");
+    if (!response.ok) {
+      const res = await response.text();
+      console.log(res);
+      throw new Error(res);
     }
 
-    return data;
+    const { token } = await response.json();
+
+    return {
+      token,
+      endpoint,
+      code
+    };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",

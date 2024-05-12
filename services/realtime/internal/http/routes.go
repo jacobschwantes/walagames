@@ -7,7 +7,6 @@ import (
 
 	realtime "github.com/jacobschwantes/quizblitz/services/realtime/internal"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal/game"
-	"github.com/jacobschwantes/quizblitz/services/realtime/internal/lobby"
 	"github.com/jacobschwantes/quizblitz/services/realtime/internal/websocket"
 )
 
@@ -42,22 +41,21 @@ func host(api realtime.APIClient, lm realtime.LobbyManager, atm realtime.AuthTok
 			http.Error(w, "Failed to fetch quiz", http.StatusInternalServerError)
 			return
 		}
-		
+
 		g := game.QuizBlitz(quiz)
 
-		l, code, err := lm.CreateLobby(g)
+		lobby, code, err := lm.CreateLobby(g)
 		if err != nil {
 			fmt.Println("failed to create lobby: ", err)
 			http.Error(w, "Failed to create lobby", http.StatusInternalServerError)
 			return
 		}
-		go l.Run(lm)
+		go lobby.Run(lm)
 
-		player := lobby.NewPlayer(*req.User, realtime.RoleHost)
-		err = l.Register(player)
+		err = lobby.Register(*req.User, realtime.RoleHost)
 		if err != nil {
 			fmt.Println("failed to register host: ", err)
-			http.Error(w, "Failed to register player", http.StatusInternalServerError)
+			http.Error(w, "Failed to register host", http.StatusInternalServerError)
 			return
 		}
 
@@ -107,7 +105,7 @@ func join(lm realtime.LobbyManager, auth realtime.AuthTokenManager) http.Handler
 		}
 
 		// lookup lobby
-		l, err := lm.Lobby(code)
+		lobby, err := lm.Lobby(code)
 		if err != nil {
 			http.Error(w, "Lobby does not exist", http.StatusNotFound)
 			return
@@ -120,25 +118,11 @@ func join(lm realtime.LobbyManager, auth realtime.AuthTokenManager) http.Handler
 			return
 		}
 
-		var player realtime.Player
-
-		// player is not registered or is not allowed to join
-		if player, err = l.Player(req.User.ID); player == nil {
-			// player not allowed entry (lobby is full, player was kicked, etc)
-			if err != nil {
-				fmt.Println("player cant join because: ", err)
-				http.Error(w, fmt.Sprintf("Unable to join: %v", err), http.StatusInternalServerError)
-				return
-			}
-
-			// register player to lobby
-			player = lobby.NewPlayer(*req.User, realtime.RolePlayer)
-			err := l.Register(player) // player can now connect to lobby
-			if err != nil {
-				fmt.Println("failed to register player")
-				http.Error(w, "failed to register player", http.StatusInternalServerError)
-				return
-			}
+		err = lobby.Register(*req.User, realtime.RolePlayer)
+		if err != nil {
+			fmt.Println("failed to register player: ", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		token, err := auth.GenerateToken(req.User.ID, code) // player uses this to join lobby (indentification)
@@ -187,14 +171,6 @@ func connect(lm realtime.LobbyManager, auth realtime.AuthTokenManager) http.Hand
 			return
 		}
 
-		// lookup player
-		player, err := lobby.Player(userID)
-		if err != nil {
-			// likely was kicked
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
 		// upgrade client connection to websocket
 		conn, err := websocket.UpgradeConnection(w, r)
 		if err != nil {
@@ -203,6 +179,10 @@ func connect(lm realtime.LobbyManager, auth realtime.AuthTokenManager) http.Hand
 		}
 
 		// connect client to lobby
-		lobby.Connect(conn, player)
+		err = lobby.Connect(conn, userID)
+		if err != nil {
+			conn.Close()
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }

@@ -78,7 +78,7 @@ func (lm *lobbyManager) uniqueLobbyCode() (string, error) {
 }
 
 func generateRandomCode(length int) (string, error) {
-	const charset = "ABCDEFGHIJKlNPQRSTUVWXYZ"
+	const charset = "ABCDEFGHIJKLNPQRSTUVWXYZ"
 	b := make([]byte, length)
 	if _, err := rand.Read(b); err != nil {
 		return "", err

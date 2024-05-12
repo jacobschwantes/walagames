@@ -3,11 +3,11 @@ package realtime
 import "github.com/gorilla/websocket"
 
 type Lobby interface {
-	Player(userID string) (Player, error)
+	Player(userID string) Player
 	Players() []*PlayerInfo
 	Code() string
-	Connect(conn *websocket.Conn, p Player)
-	Register(p Player) error
+	Connect(conn *websocket.Conn, userID string) error
+	Register(p PlayerProfile, r PlayerRole) error
 	Run(lm LobbyManager)
 	Broadcast(msg []byte)
 }
