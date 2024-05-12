@@ -3,6 +3,7 @@ import { signIn, signOut } from "next-auth/react";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { LogOut } from "lucide-react";
+import { IconLogout } from "@tabler/icons-react";
 
 export function SignIn() {
   const [signingIn, setSigningIn] = useState(false);
@@ -29,16 +30,17 @@ export function SignOut() {
     await signOut();
   };
   return (
-    <button
+    <Button
+      variant="outline"
+      size="icon"
       disabled={signingOut}
       onClick={handleSignOut}
-      className="bg-[#252933] h-full aspect-square px-3 py-3 flex items-center justify-center rounded-xl group"
     >
       {signingOut ? (
         <span className="loader h-4 w-4" />
       ) : (
-        <LogOut className="h-5 w-5 text-zinc-400 group-hover:text-white transition-all duration-200" />
+        <IconLogout className="h-4 w-4" />
       )}
-    </button>
+    </Button>
   );
 }

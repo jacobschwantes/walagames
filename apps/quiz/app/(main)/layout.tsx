@@ -4,8 +4,12 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
-import { SideBar } from "@/components/layout/side-bar";
-import { ActivityBar } from "@/components/layout/activity-bar";
+import { Header } from "@/components/layout/header";
+import { LobbyProvider } from "@/lib/lobby-provider";
+import { NotificationProvider } from "@/lib/notification-provider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { EventProvider } from "@/lib/event-provider";
+
 const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "QuizBlitz",
@@ -19,15 +23,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn(inter.className, "dark  bg-[#1d2229]")}>
-        <div className="flex h-screen ">
-          <SideBar />
-          <div className="flex-1 flex flex-col w-full bg-[#1a1e24] ">
-            {children}
-          </div>
-          {/* <ActivityBar /> */}
-        </div>
-        <Script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></Script>
+      <body
+        className={cn(
+          inter.className,
+          "dark  bg-[#1a1e24] flex flex-col h-screen"
+        )}
+      >
+        <EventProvider>
+          <NotificationProvider>
+            <LobbyProvider>
+              <Header />
+              <ScrollArea className="w-full  h-[95vh]">
+                <div className="max-w-[90rem] mx-auto px-5">{children}</div>
+              </ScrollArea>
+            </LobbyProvider>
+          </NotificationProvider>
+        </EventProvider>
+        {/* <Script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></Script> */}
         <Toaster />
       </body>
     </html>
