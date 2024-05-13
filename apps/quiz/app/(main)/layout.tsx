@@ -5,10 +5,10 @@ import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
 import { Header } from "@/components/layout/header";
-import { LobbyProvider } from "@/lib/lobby-provider";
-import { NotificationProvider } from "@/lib/notification-provider";
+import { LobbyProvider } from "@/components/providers/lobby-provider";
+import { NotificationProvider } from "@/components/providers/notification-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EventProvider } from "@/lib/event-provider";
+import { EventProvider } from "@/components/providers/event-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
@@ -33,8 +33,8 @@ export default function RootLayout({
           <NotificationProvider>
             <LobbyProvider>
               <Header />
-              <ScrollArea className="w-full  h-[95vh]">
-                <div className="max-w-[90rem] mx-auto px-5">{children}</div>
+              <ScrollArea className="w-full h-[95vh]">
+                <div className="max-w-[95rem] mx-auto px-4">{children}</div>
               </ScrollArea>
             </LobbyProvider>
           </NotificationProvider>

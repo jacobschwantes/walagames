@@ -27,24 +27,18 @@ type QuizStats struct {
 	// Rating float32 `json:"rating" bson:"rating"`
 }
 type QuizMeta struct {
-	Title       string `json:"title" bson:"title"`
-	Description string `json:"description" bson:"description"`
-	Category    string `json:"category" bson:"category"`
-	Public      bool   `json:"public" bson:"public"`
-	Image       Image  `json:"image" bson:"image"`
-}
-
-type Image struct {
-	Src string `json:"src" bson:"src"`
+	Title       string         `json:"title" bson:"title"`
+	Description string         `json:"description" bson:"description"`
+	Category    string         `json:"category" bson:"category"`
+	Visibility  QuizVisibility `json:"visibility" bson:"visibility"`
+	Image       string         `json:"image" bson:"image"`
 }
 
 type QuizVisibility string
 
 const (
-	VisibilityPublic        QuizVisibility = "public"
-	VisibilityPrivate       QuizVisibility = "private"
-	VisibilityCollaborators QuizVisibility = "collaborators"
-	VisibilityFriends       QuizVisibility = "friends"
+	VisibilityPublic  QuizVisibility = "public"
+	VisibilityPrivate QuizVisibility = "private"
 )
 
 type QuizRepository interface {

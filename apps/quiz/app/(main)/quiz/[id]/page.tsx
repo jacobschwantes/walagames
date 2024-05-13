@@ -23,7 +23,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const activePath = quiz.meta.title;
 
   return (
-    <main className="w-full  h-full flex flex-col mx-auto py-5 max-w-[69rem]">
+    <main className="w-full  h-full flex flex-col mx-auto py-5 max-w-[71rem]">
       <QuizBreadcrumb
         activePath={activePath}
         crumbs={[{ name: "Library", href: "/library" }]}

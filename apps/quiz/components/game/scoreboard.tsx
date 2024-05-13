@@ -15,7 +15,7 @@ function Scoreboard({ username, lobbyState }: ScoreboardProps) {
         {lobbyState.players.map((player: Player, idx: number) => (
               <li
                 className="flex items-center gap-2 justify-between"
-                key={player.username}
+                key={player.profile.username}
               >
                 <h3 className="flex items-center gap-2 text-sm">
                   <Avatar
@@ -29,14 +29,14 @@ function Scoreboard({ username, lobbyState }: ScoreboardProps) {
                     <AvatarImage
                       alt="avatar"
                       src={
-                        player.image ||
-                        `https://api.dicebear.com/7.x/notionists/svg?seed=${player.username}`
+                        player.profile.image ||
+                        `https://api.dicebear.com/7.x/notionists/svg?seed=${player.profile.username}`
                       }
                     />
                     <AvatarFallback className="text-xs">JS</AvatarFallback>
                     {/* {idx + 1} */}
                   </Avatar>
-                  {player.username === username ? "You" : player.username}
+                  {player.profile.username === username ? "You" : player.profile.username}
                 </h3>
                 {/* <span className="block text-sm">{player.score}</span> */}
               </li>

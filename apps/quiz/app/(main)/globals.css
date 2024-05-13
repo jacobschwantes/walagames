@@ -32,37 +32,37 @@
     --input: 240 5.9% 90%;
     --ring: 216, 16%, 12%;
 
-    --radius: 0.5rem;
+    --radius: 0.7rem;
   }
 
   .dark {
-    --background: 216, 16%, 12%;
+    --background: 218 15% 14%;
     --foreground: 0 0% 98%;
 
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 222, 16%, 15%;
+    --popover: 222 16% 15%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 218 17% 18%;
+    --primary-foreground: 240 6% 10%;
 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 222, 16%, 22%;
+    --muted: 222 16% 22%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 222, 16%, 22%;
+    --accent: 219 17% 19%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 82% 44%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --input: 240 5% 17%;
+    --ring: 240 5% 84%;
   }
 }
 
@@ -73,6 +73,12 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .top-shadow-yellow {
+  -webkit-box-shadow: inset 0px 10px 10px -8px #ffffff53;
+  -moz-box-shadow: inset 0px 10px 10px -8px #ffffff53;
+  box-shadow: inset 0px 10px 10px -8px #ffbf0010;
+}
 }
 
 .countdown-timer {
@@ -155,4 +161,102 @@
   -webkit-box-shadow: inset 1px 1px 10px #ffffff53;
   -moz-box-shadow: inset 1px 1px 10px #ffffff53;
   box-shadow: inset 1px 1px 10px #ffffff24;
+}
+.top-shadow {
+  -webkit-box-shadow: inset 0px 10px 10px -8px #ffffff53;
+  -moz-box-shadow: inset 0px 10px 10px -8px #ffffff53;
+  box-shadow: inset 0px 10px 10px -8px #ffffff24;
+}
+
+
+
+
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* basic structure for the rays setup */
+#raysDemoHolder {
+  /* position: relative;  */
+  width: 100%;
+  height: 100%;
+}
+#raysLogo {
+  width: 300px;
+  height: 233px;
+  text-indent: -3000px;
+  /* background: url(logo.png) 0 0 no-repeat;  */
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+#rays {
+  /* with animation properties */
+  background: url(/rays.png) 0 0 no-repeat;
+  position: absolute;
+  top: -100px;
+  left: -100px;
+  width: 490px;
+  height: 490px;
+
+  /* microsoft ie */
+  animation-name: spin;
+  animation-duration: 40000ms; /* 40 seconds */
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+#rays:hover {
+  /* animation-duration: 10000ms; 10 seconds - speed it up on hover! */
+  /* resets the position though!  sucks */
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-rotate {
+  animation: spin 40s linear infinite;
+}
+
+
+.shake {
+  animation: shake .5s ease-in-out;
+}
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-3px);
+  }
+
+  40% {
+    transform: translateX(3px);
+  }
+
+  60% {
+    transform: translateX(-3px);
+  }
+
+  80% {
+    transform: translateX(3px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }

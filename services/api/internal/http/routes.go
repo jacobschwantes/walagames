@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -61,7 +62,7 @@ func quizByID(qr api.QuizRepository) http.HandlerFunc {
 
 		switch r.Method {
 		case http.MethodGet:
-			if !quiz.Meta.Public && quiz.OwnerID != userID {
+			if quiz.Meta.Visibility == api.VisibilityPrivate && quiz.OwnerID != userID {
 				http.Error(w, "Unauthorized access", http.StatusUnauthorized)
 				return
 			}
@@ -97,9 +98,15 @@ func quizByID(qr api.QuizRepository) http.HandlerFunc {
 				http.Error(w, "Failed to update quiz", http.StatusInternalServerError)
 				return
 			}
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Quiz updated successfully"))
 
+			w.WriteHeader(http.StatusOK)
+
+			bytes, err := json.Marshal(quiz)
+			if err != nil {
+				http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+				return
+			}
+			w.Write(bytes)
 		case http.MethodDelete:
 			if quiz.OwnerID != userID {
 				http.Error(w, "User is not the owner", http.StatusUnauthorized)
@@ -171,5 +178,26 @@ func quiz(qr api.QuizRepository) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write(jsonData)
+	}
+}
+
+func events(api api.APIClient, sm api.StreamManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := getUserID(r.Context())
+		log.Println("userID", userID)
+
+		user, err := api.GetUserData(userID)
+		if err != nil {
+			log.Println(err)
+		}
+
+		go func() {
+			log.Println("go routine launched")
+			<-r.Context().Done()
+			log.Println("context done")
+			return
+		}()
+
+		sm.Serve(w, r, userID, user.Data.Friends)
 	}
 }

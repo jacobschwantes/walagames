@@ -1,5 +1,4 @@
 import { createQuiz, fetchQuizMany } from "@/actions/quiz";
-import { QuizForm } from "@/components/quiz/quiz-form";
 import Link from "next/link";
 
 export default async function Page() {

@@ -30,9 +30,16 @@ type QuizMeta struct {
 	Title       string `json:"title" bson:"title"`
 	Description string `json:"description" bson:"description"`
 	Category    string `json:"category" bson:"category"`
-	Public      bool   `json:"public" bson:"public"`
+	Visibility  string `json:"visibility" bson:"visibility"`
 	Image       string `json:"image" bson:"image"`
 }
+
+type QuizVisibility string
+
+const (
+	VisibilityPublic  QuizVisibility = "public"
+	VisibilityPrivate QuizVisibility = "private"
+)
 
 type APIClient interface {
 	FetchQuiz(id string, userID string) (*Quiz, error)

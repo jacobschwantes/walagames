@@ -10,8 +10,10 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/jacobschwantes/quizblitz/services/api/internal"
+	"github.com/jacobschwantes/quizblitz/services/api/internal/apiclient"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/http"
 	"github.com/jacobschwantes/quizblitz/services/api/internal/mongo"
+	"github.com/jacobschwantes/quizblitz/services/api/internal/stream"
 )
 
 func run(ctx context.Context) error {
@@ -21,10 +23,10 @@ func run(ctx context.Context) error {
 	}
 
 	cfg := api.HTTPConfig{
-		Host: os.Getenv("HOST"),
-		Port: os.Getenv("PORT"),
-		AllowedOrigins: os.Getenv("CORS_ALLOWED_ORIGINS"),
-		APIKey: os.Getenv("API_KEY"),
+		Host:           os.Getenv("HOST"),
+		Port:           os.Getenv("PORT"),
+		AllowedOrigins: os.Getenv(os.Getenv("CORS_ORIGIN")),
+		APIKey:         os.Getenv("API_KEY"),
 	}
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
@@ -39,7 +41,9 @@ func run(ctx context.Context) error {
 	}()
 
 	qr := mongo.NewQuizRepository(mdb)
-	http.ServeHTTP(ctx, cfg, qr)
+	api := apiclient.New(os.Getenv("FUSIONAUTH_URL"), os.Getenv("FUSIONAUTH_API_KEY"))
+	sm := stream.NewManager()
+	http.ServeHTTP(ctx, cfg, qr, api, sm)
 
 	return nil
 }

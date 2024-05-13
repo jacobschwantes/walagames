@@ -18,14 +18,14 @@ import { authOptions } from "@/auth";
 import { SignIn, SignOut } from "../auth-components";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { LobbyCodeDrawer } from "../game/code-drawer";
+import { LobbyCodeDrawer } from "../lobby/code-drawer";
 import { Notifications, NotificationsDrawer } from "../ui/notifications";
 export const Header = async () => {
   const session = await getServerSession(authOptions);
   return (
     <header className=" w-full  border-b py-3">
-      <div className="justify-between flex gap-2.5 max-w-[90rem] mx-auto px-3 ">
-        <div className="flex gap-8">
+      <div className="justify-between flex gap-2.5 max-w-[95rem] mx-auto px-3 ">
+        <div className="flex gap-4">
           <Link href="/" className="flex items-center justify-center gap-1.5">
             <Image src="/icon.webp" width={36} height={36} />
             <h1 className="text-2xl font-medium">QuizBlitz</h1>
@@ -40,7 +40,7 @@ export const Header = async () => {
           {session && session.user ? (
             <div className="flex gap-2 h-full items-center">
               <UserDropdown user={session.user} />
-              <Notifications />
+              {/* <Notifications /> */}
               <SignOut />
             </div>
           ) : (

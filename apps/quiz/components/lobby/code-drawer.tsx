@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { usePathname, useRouter } from "next/navigation";
-import { useLobbyContext } from "@/lib/lobby-provider";
+import { useLobbyContext } from "@/components/providers/lobby-provider";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,

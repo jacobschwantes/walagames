@@ -35,7 +35,7 @@ function signOut(request: NextRequest) {
 
 function shouldUpdateToken(tokens: BackendTokens) {
   // TODO: Implement a better way to check if the token is expired
-  if (Date.now() < (tokens.expires_at - 500) * 1000) {
+  if (Date.now() < (tokens.expires_at - 60) * 1000) {
     console.log("TOKEN IS NOT EXPIRED");
     console.log(
       "TOKEN EXPIRES IN",
@@ -44,6 +44,7 @@ function shouldUpdateToken(tokens: BackendTokens) {
     );
     return false;
   }
+
   console.log("TOKEN IS EXPIRED, REFRESHING");
   return true;
 }
@@ -82,9 +83,10 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
       });
       response = updateCookie(newSessionToken, request, response);
     } catch (error) {
-      response = updateCookie(null, request, response);
+        return signOut(request)
     }
   }
+    console.log(request.url)
 
   return response;
 };
@@ -105,22 +107,26 @@ async function refreshToken(token: JWT): Promise<BackendTokens> {
     body: params,
     method: "POST",
   })
-    .then((res) => res.json())
-    .catch((e) => console.log(e));
+    
+    
+    if (!response.ok) {
+        console.log(await response.text())
+        throw new Error("failed to refresh")
+    }
   
-  console.log(response)
+  const tokens = await response.json()
 
-  if (!response.access_token) {
+  if (!tokens.access_token) {
     throw new Error("failed to refresh")
   }
 
   console.log("TOKENS REFRESHED");
   return {
-    access_token: response.access_token,
-    expires_at: Math.floor(Date.now() / 1000) + response.expires_in,
+    access_token: tokens.access_token,
+    expires_at: Math.floor(Date.now() / 1000) + tokens.expires_in,
     // Fall back to old refresh token, but note that
     // many providers may only allow using a refresh token once.
-    refresh_token: response.refresh_token ?? token.refresh_token,
+    refresh_token: tokens.refresh_token ?? token.refresh_token,
   };
 }
 
@@ -169,6 +175,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    '/((?!api|_next/static|_next/image|.*\\.png$).*)'
   ],
 };

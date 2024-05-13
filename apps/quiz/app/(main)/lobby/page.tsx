@@ -1,6 +1,6 @@
 "use client";
 import { toast } from "sonner";
-import { useLobbyContext } from "@/lib/lobby-provider";
+import { useLobbyContext } from "@/components/providers/lobby-provider";
 import GameClient from "@/components/game/game-client";
 
 interface PageProps {
@@ -10,7 +10,7 @@ export default function Page({ searchParams }: PageProps) {
   const { sendEvent, lobbyState } = useLobbyContext();
 
   return (
-    <main className="flex  flex-col items-center w-full">
+    <main className="">
       {lobbyState ? (
         <GameClient
           sendEvent={sendEvent}

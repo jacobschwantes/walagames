@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { LobbyState, PlayerAction } from "./types";
+import { LobbyState, PlayerAction } from "../../lib/types";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";

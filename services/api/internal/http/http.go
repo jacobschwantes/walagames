@@ -16,10 +16,14 @@ func ServeHTTP(
 	ctx context.Context,
 	cfg api.HTTPConfig,
 	qr api.QuizRepository,
+	api api.APIClient,
+	sm api.StreamManager,
 ) error {
 	srv := NewServer(
 		qr,
 		cfg,
+		api,
+		sm,
 	)
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(cfg.Host, cfg.Port),
@@ -51,12 +55,16 @@ func ServeHTTP(
 func NewServer(
 	qr api.QuizRepository,
 	cfg api.HTTPConfig,
+	api api.APIClient,
+	sm api.StreamManager,
 ) *http.Handler {
 	mux := http.NewServeMux()
 
 	addRoutes(
 		mux,
 		qr,
+		api,
+		sm,
 	)
 
 	var handler http.Handler = mux
@@ -65,8 +73,9 @@ func NewServer(
 	return &handler
 }
 
-func addRoutes(mux *http.ServeMux, qr api.QuizRepository) {
+func addRoutes(mux *http.ServeMux, qr api.QuizRepository, api api.APIClient, sm api.StreamManager) {
 	mux.Handle("/quiz", withUserID(quiz(qr)))
 	mux.Handle("/quiz/{id}", withUserID(quizByID(qr)))
 	mux.Handle("/quizzes", withUserID(quizzes(qr)))
+	mux.Handle("/events", withUserID(events(api, sm)))
 }

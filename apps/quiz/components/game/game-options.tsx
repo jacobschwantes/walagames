@@ -11,39 +11,78 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLobbyContext } from "@/lib/lobby-provider";
+import { useLobbyContext } from "@/components/providers/lobby-provider";
 import { Quiz } from "@/lib/types";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { IconPlayerPlayFilled } from "@tabler/icons-react";
 interface GameOptionsProps {
   quiz: Quiz;
 }
 export default function GameOptions({ quiz }: GameOptionsProps) {
   const { meta } = quiz;
   return (
-    <div className=" max-w-5xl mx-auto flex gap-5 items-start">
-      <div className="w-[400px] relative">
-        <div className="flex flex-col justify-between gap-0.5 absolute bottom-5 left-5 z-20 ">
-          <h2 className="text-2xl">{meta.title}</h2>
-          <p className="text-zinc-200  text-sm">{meta.category}</p>
-        </div>
-
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-          <div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-80"></div>
-          <Image
-            objectFit="cover"
-            alt="preview image"
-            fill
-            // TODO: set these sizes for performance
-            // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            src={meta.image}
-          />
-        </div>
+    <div className="w-full  flex pt-6">
+      <div className="flex flex-col w-full">
+        <motion.div
+          layout="position"
+          transition={{
+            duration: 0.3,
+            ease: [0, 0.71, 0.2, 1.01],
+            restDelta: 1,
+          }}
+          className="w-full relative pt-6 "
+        >
+          <div className="grid grid-cols-2 items-start w-full  gap-12 absolute bottom-5 left-0 right-0 px-6 z-20">
+            <div className="flex flex-col justify-between gap-0.5">
+              <h2 className="text-3xl">{meta.title}</h2>
+              <p className="text-zinc-200  text-sm capitalize">
+                {meta.category}
+              </p>
+            </div>
+          </div>
+          <div className="relative w-full aspect-[16/6] rounded-t-xl overflow-hidden">
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-80"></div>
+            <Image
+              objectFit="cover"
+              alt="preview image"
+              fill
+              // TODO: set these sizes for performance
+              // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              src={meta.image}
+            />
+          </div>
+        </motion.div>
+        <motion.div
+          transition={{
+            duration: 0.3,
+            ease: [0, 0.71, 0.2, 1.01],
+            restDelta: 1,
+          }}
+          layout="position"
+          className="sticky top-0 z-50"
+        >
+          <div className=" p-3 flex gap-2 mx-auto max-w-6xl rounded-b-xl items-center  w-full justify-between  bg-[#242a32]">
+            <Link href={`/quiz/${quiz.id}?play`}>
+              <Button
+                // size="sm"
+                variant="action"
+                className="gap-1 px-12"
+              >
+                <IconPlayerPlayFilled className="h-4 w-4" />
+                Start
+              </Button>
+            </Link>
+            
+          </div>
+        </motion.div>
       </div>
-      <div>
+      {/* <div>
         <TabsDemo id={quiz.id} />
-      </div>
+      </div> */}
     </div>
   );
 }

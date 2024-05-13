@@ -12,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useNotificationContext } from "@/lib/notification-provider";
+import { useNotificationContext } from "@/components/providers/notification-provider";
 import { IconBellFilled } from "@tabler/icons-react";
 import {
   Popover,
