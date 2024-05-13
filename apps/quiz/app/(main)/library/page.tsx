@@ -8,17 +8,20 @@ export default async function Page() {
     return <div>{quizzes.error}</div>;
   }
 
-  const ownerIds = [...new Set(quizzes.data.map((q) => q.owner_id))];
+  const ownerIds =
+    quizzes.data && quizzes.data.length > 0
+      ? [...new Set(quizzes.data.map((q) => q.owner_id))]
+      : [];
+  
 
   const profiles = await fetchUserProfilesByIds(ownerIds);
   if ("error" in profiles) {
-    return <div>{profiles.error}</div>;
+    // return <div>{profiles.error}</div>;
   }
 
   return (
     <div className=" w-full mx-auto h-full flex flex-col">
-    
-      <Quizzes quizzes={quizzes.data} profiles={profiles.data} />
+      <Quizzes quizzes={quizzes.data || []} profiles={profiles.data} />
     </div>
   );
 }

@@ -25,23 +25,23 @@ type LobbyManager interface {
 	CloseLobby(code string, message string) error
 }
 
+type LobbyEventType string
+
 // Server emitted events
 const (
-	GAME_STATE  = "GAME_STATE"
-	LOBBY_STATE = "LOBBY_STATE"
-	MESSAGE     = "MESSAGE"
+	LOBBY_STATE LobbyEventType = "LOBBY_STATE"
+	MESSAGE     LobbyEventType = "MESSAGE"
 )
 
 // User emitted events
 const (
-	SUBMIT_ANSWER = "SUBMIT_ANSWER"
-	START_GAME    = "START_GAME"
-	CLOSE_LOBBY   = "CLOSE_LOBBY"
+	START_GAME  LobbyEventType = "START_GAME"
+	CLOSE_LOBBY LobbyEventType = "CLOSE_LOBBY"
 )
 
 type Event struct {
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"`
+	Type    LobbyEventType `json:"type"`
+	Payload interface{}    `json:"payload"`
 	Player  Player
 }
 

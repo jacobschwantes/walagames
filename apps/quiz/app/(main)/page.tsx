@@ -20,7 +20,10 @@ export default async function Home() {
      return <div>{quizzes.error}</div>;
    }
 
-   const ownerIds = [...new Set(quizzes.data.map((q) => q.owner_id))];
+     const ownerIds =
+      quizzes.data && quizzes.data.length > 0
+         ? [...new Set(quizzes.data.map((q) => q.owner_id))]
+         : [];
 
    const profiles = await fetchUserProfilesByIds(ownerIds);
    if ("error" in profiles) {

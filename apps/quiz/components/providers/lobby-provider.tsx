@@ -7,13 +7,14 @@ import {
   useEffect,
   useState,
 } from "react";
-import { LobbyState, PlayerAction } from "../../lib/types";
+import { GameState, LobbyState, PlayerAction } from "../../lib/types";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 interface LobbyContextType {
   lobbyState: LobbyState | null; // Assuming LobbyState is already defined in your types
+  gameState: GameState | null;
   sendEvent: (type: PlayerAction, payload: any) => void; // Customize based on actual usage
   createLobby: (quizID: string) => Promise<void | Error>;
   joinLobby: (lobbyCode: string) => Promise<void | Error>;
@@ -21,6 +22,7 @@ interface LobbyContextType {
 
 const defaultContextValue: LobbyContextType = {
   lobbyState: null,
+  gameState: null,
   sendEvent: () => {}, // Provide no-op defaults for initialization
   createLobby: async () => {},
   joinLobby: async () => {},
@@ -33,7 +35,7 @@ export const LobbyProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [url, setUrl] = useState("");
   const [headerEnabled, setHeaderEnabled] = useState(false);
-  const [lobbyState, sendEvent] = useLobby(url);
+  const [lobbyState, sendEvent, gameState] = useLobby(url);
 
   useEffect(() => {
     const timeout = setTimeout(async () => {
@@ -122,6 +124,7 @@ export const LobbyProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         lobbyState,
         sendEvent,
+        gameState,
         createLobby: handleCreateLobby,
         joinLobby: handleJoinLobby,
       }}

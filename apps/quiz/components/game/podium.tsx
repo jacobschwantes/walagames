@@ -57,7 +57,7 @@ const Podium: React.FC<PodiumProps> = ({}) => (
               <div className="relative ">
                 <Avatar
                   className={cn(
-                    "h-20 w-20 border-2 border-white rounded-full relative z-10 bg-[#1a1e24] group-even:border-yellow-400",
+                    "h-20 w-20 border-2 border-white rounded-full relative z-10 bg-[#1a1e24] group-even:border-yellow-500",
                     position === "1st" && "h-24 w-24"
                   )}
                 >
@@ -104,7 +104,7 @@ const Podium: React.FC<PodiumProps> = ({}) => (
               <div
                 className={cn(
                   " -mt-3 relative z-10 bg-[#2e3640] rounded-full text-xs mx-auto px-2 py-1 font-medium",
-                  position == "1st" && "bg-yellow-400 text-zinc-900"
+                  position == "1st" && "bg-yellow-500 text-zinc-900"
                 )}
               >
                 {position}
@@ -131,16 +131,16 @@ const Podium: React.FC<PodiumProps> = ({}) => (
 
             <div
               style={{ perspective: "5.7rem" }}
-              className=" w-[9rem] group-odd:w-[8.25rem] mx-auto translate-y-[10px]"
+              className=" w-[9rem] group-odd:w-[8.25rem] mx-auto translate-y-[12px]"
             >
               <div
                 style={{ transform: "rotateX(60deg)" }}
-                className="w-full h-10 bg-gradient-to-t from-violet-500 to-violet-800/70 group-even:to-yellow-800/70 group-even:from-yellow-400   group-first:to-sky-800/70 group-first:from-sky-500 rounded-sm "
+                className="w-full h-10 bg-gradient-to-t from-violet-500 to-violet-800/70 group-even:to-yellow-800/70 group-even:from-yellow-500   group-first:to-blue-800/70 group-first:from-blue-500 rounded-sm "
               ></div>
             </div>
-            <div className="w-full group-first:to-sky-500 bg-gradient-to-t group-even:to-yellow-400  group-even:from-yellow-400 group-first:from-sky-500 top-shadow from-violet-500 to-violet-500 h-full flex p-3 justify-center  rounded-t-sm relative z-20 ">
+            <div className="w-full group-first:to-blue-500 bg-gradient-to-t group-even:to-yellow-500  group-even:from-yellow-500 group-first:from-blue-500 top-shadow from-violet-500 to-violet-500 h-full flex p-3 justify-center  rounded-t-sm relative z-20 ">
               <h2 className="  relative z-10 text-white">{name}</h2>
-              {/* <span className="absolute left-0 right-0 -bottom-3 text-[5rem] group-even:text-[7rem] leading-none group-last:text-[4rem]  flex items-center justify-center  font-bold text-center group-even:text-yellow-900/30 group-first:text-sky-900/30 group-last:text-violet-900/30">
+              {/* <span className="absolute left-0 right-0 -bottom-3 text-[5rem] group-even:text-[7rem] leading-none group-last:text-[4rem]  flex items-center justify-center  font-bold text-center group-even:text-yellow-900/30 group-first:text-blue-900/30 group-last:text-violet-900/30">
                 {id}
               </span> */}
             </div>
@@ -173,7 +173,7 @@ const Podium: React.FC<PodiumProps> = ({}) => (
             <TableRow key={player.id}>
               <TableCell className="">#{idx + 4}</TableCell>
               <TableCell className="flex items-center gap-2">
-                <Avatar className="h-7 w-7 border border-white rounded-full relative z-10 bg-[#1a1e24] group-even:border-yellow-400">
+                <Avatar className="h-7 w-7 border border-white rounded-full relative z-10 bg-[#1a1e24] group-even:border-yellow-500">
                   <AvatarImage
                     className=" object-cover"
                     alt="avatar"

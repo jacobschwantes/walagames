@@ -3,14 +3,7 @@
 import { MotionValue, motion, useSpring, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 
-export default function CountdownTimer() {
-  let [count, setCount] = useState(60);
-
-  useEffect(() => {
-    const interval = setInterval(() => setCount((prev) => prev - 1), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
+export default function CountdownTimer({count}: {count: number}) {
   return <Counter value={count} />;
 }
 

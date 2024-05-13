@@ -1,26 +1,20 @@
-"use client";
-import { toast } from "sonner";
-import { useLobbyContext } from "@/components/providers/lobby-provider";
+import { authOptions } from "@/auth";
 import GameClient from "@/components/game/game-client";
+import { getServerSession } from "next-auth";
 
 interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
-export default function Page({ searchParams }: PageProps) {
-  const { sendEvent, lobbyState } = useLobbyContext();
+export default async function Page({ searchParams }: PageProps) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return <div>Not authenticated</div>;
+  }
 
+  const id = session.user.id;
   return (
     <main className="">
-      {lobbyState ? (
-        <GameClient
-          sendEvent={sendEvent}
-          lobbyState={lobbyState}
-          username=""
-          onClose={() => toast("on close called")}
-        />
-      ) : (
-        "loading..."
-      )}
+      <GameClient id={id} />
     </main>
   );
 }

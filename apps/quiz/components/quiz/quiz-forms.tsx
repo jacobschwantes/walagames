@@ -11,7 +11,7 @@ const sample = {
     description:
       "Video Game History and fun Trivia for all ages to learn more about the video game industry and to test their knowledge on games, gaming consoles, companies, and developers.",
     category: "Technology",
-    public: true,
+    visibility: "public",
     image: "/preview.jpg",
   },
   questions: [

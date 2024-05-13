@@ -58,7 +58,7 @@ export const createQuiz = async (
 
     const data = await response.json();
     console.log("createQuiz", data);
-
+    revalidatePath("/library");
     return data;
     // if (!response.ok) {
     //   throw new Error(data.error || "Unknown error");

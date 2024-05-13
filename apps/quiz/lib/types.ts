@@ -1,8 +1,11 @@
 import { z } from "zod";
 export enum LobbyEvent {
-  GAME_STATE = "GAME_STATE",
+  UPDATE_SCORES = "UPDATE_SCORES",
+  NEW_ROUND = "NEW_ROUND",
   LOBBY_STATE = "LOBBY_STATE",
   MESSAGE = "MESSAGE",
+  GAME_OVER = "GAME_OVER",
+  GAME_START = "GAME_START",
 }
 
 export enum PlayerAction {
@@ -41,6 +44,22 @@ export type LobbyState = {
   players: Player[];
 };
 
+export type GameState = {
+  status: "active" | "completed";
+  roundDuration: number;
+  totalRounds: number;
+  currentRound: number;
+  currentQuestion: {
+    id: string;
+    question: string;
+    answers: {
+      text: string;
+      id: string;
+    }[];
+  } | null;
+  scores: Record<string, number>;
+  answer: string | null;
+};
 
 const QuestionSchema = z.object({
   id: z.string(),
@@ -68,13 +87,12 @@ const FillInBlankQuestion = z.object({
 // ]);
 
 export const QuizMetaSchema = z.object({
-    title: z.string(),
-    description: z.string().optional(),
-    category: z.string(),
-    visibility: z.enum(["public", "private"]),
-    image: z.string()
-  })
-
+  title: z.string(),
+  description: z.string().optional(),
+  category: z.string(),
+  visibility: z.enum(["public", "private"]),
+  image: z.string(),
+});
 
 export const QuizFormSchema = z.object({
   meta: QuizMetaSchema,
