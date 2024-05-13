@@ -1,12 +1,8 @@
 "use client";
-import * as React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { PushButton, SaveButton } from "../ui/custom-button";
-import { Pencil1Icon } from "@radix-ui/react-icons";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -15,72 +11,54 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  ChevronRight,
-  ImagePlus,
-  Pencil,
-  PencilLine,
-  Save,
-  Trash,
-  UploadIcon,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { uploadImage } from "@/actions/upload";
-import ColorThief from "colorthief";
+import { ImagePlus, PencilLine, Save, Trash } from "lucide-react";
 import { Button } from "../ui/button";
 import { deleteQuiz } from "@/actions/quiz";
 import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuizContext } from "../providers/quiz-provider";
+import {
+  IconDeviceFloppy,
+  IconEdit,
+  IconPhotoUp,
+  IconPlayerPlayFilled,
+  IconSettings,
+  IconTrash,
+} from "@tabler/icons-react";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { useFormStatus } from "react-dom";
 
-// wrench icon
-{
-  /* <svg
-                className="h-3 w-3 text-white"
-                fill="currentColor"
-                viewBox="3 3 42 42"
-              >
-                <path d="m33.76001,25.02997c-.92999-.92999-1.32001-2.26996-1.04999-3.58997,1-4.79999-.48004-9.73004-3.95001-13.19-4.16003-4.16003-10.35004-5.40002-15.79004-3.15002-.31.13-.53998.40002-.59998.72998-.07001.33002.03998.67004.27002.90002l5.70001,5.70001c.78998.78998,1.22998,1.83997,1.22998,2.96002,0,1.10999-.44,2.15997-1.22998,2.94995-1.63,1.63-4.28003,1.63-5.91003,0l-5.70001-5.69995c-.23999-.23004-.57001-.34003-.89996-.27002-.33002.06-.60004.28998-.73004.59998-2.25,5.42999-1.00995,11.63,3.15002,15.79004,3.46002,3.46997,8.39001,4.94,13.19,3.94995,1.32001-.26996,2.65997.12,3.59003,1.05005l8.41998,8.42999c1.20996,1.20996,2.78998,1.81,4.37,1.81s3.16998-.60999,4.37-1.81c1.16998-1.17004,1.81-2.72003,1.81-4.37s-.64001-3.20001-1.81-4.37l-8.42999-8.42004Z" />
-              </svg> */
-}
+export function QuizHeader() {
+  const { state, handleSaveQuestions } = useQuizContext();
+  const { createLobby, lobbyState } = useLobbyContext();
+  const params = useSearchParams();
+  const router = useRouter();
 
-interface QuizHeaderProps {
-  title: string;
-  category: string;
-  description: string;
-  image: {
-    src: string;
-    meta: {
-      colorHex: string;
-      colorRGBA: string;
-      isDark: boolean;
-    };
+  const isEditing = useMemo(() => params.get("edit") != null, [params]);
+
+  const handleCreateLobby = async () => {
+    if (lobbyState?.code) {
+      router.push("/lobby");
+      return;
+    }
+    try {
+      await createLobby(state.quiz.id);
+      router.push("/lobby");
+    } catch (e) {
+      toast(e.message);
+    }
   };
-  id: string;
-  isEditing: boolean;
-  setImageColorData: (color: { r: number; g: number; b: number }) => void;
-  setIsEditing: (isEditing: boolean) => void;
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  imageDataUrl: string | null;
-  onSaveQuiz: () => void;
-}
-const QuizHeader = ({
-  title,
-  category,
-  id,
-  description,
-  image,
-  isEditing,
-  setIsEditing,
-  onSaveQuiz,
-  handleFileChange,
-  setImageColorData,
-  imageDataUrl,
-}: QuizHeaderProps) => {
-  // const router = useRouter();
-  // const handleEdit = () => {
-  //   router.push("?edit");
-  // };
-  const imgRef = React.useRef();
-
   return (
     <>
       <motion.div
@@ -90,54 +68,25 @@ const QuizHeader = ({
           ease: [0, 0.71, 0.2, 1.01],
           restDelta: 1,
         }}
-        className="w-full relative pt-6 px-6"
+        className="w-full relative pt-6 "
       >
-        <div className="grid grid-cols-2 items-start w-full  gap-12 absolute bottom-5 left-0 right-0 px-12 z-20">
+        <div className="grid grid-cols-2 items-start w-full  gap-12 absolute bottom-5 left-0 right-0 px-6 z-20">
           <div className="flex flex-col justify-between gap-0.5">
-            <h2 className="text-3xl">{title}</h2>
-            <p className="text-zinc-200  text-sm">{category}</p>
+            <h2 className="text-3xl">{state.quiz.meta.title}</h2>
+            <p className="text-zinc-200  text-sm capitalize">
+              {state.quiz.meta.category}
+            </p>
           </div>
-          {/* <div className="flex gap-2 max-w-smt ml-auto">
-            <p className=" text-sm font-light">{description}</p>
-          </div> */}
         </div>
         <div className="relative w-full aspect-[16/6] rounded-t-xl overflow-hidden">
-          {isEditing && (
-            <div className="absolute top-5 right-5 z-50">
-              <label htmlFor="file">
-                <ImagePlus className="h-5 w-5 text-white " />
-              </label>
-              <input
-                className="hidden"
-                onChange={handleFileChange}
-                accept="image/*"
-                type="file"
-                id="file"
-                name="file"
-              />
-            </div>
-          )}
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-blue-950 to-transparent opacity-80"></div>
           <Image
             objectFit="cover"
             alt="preview image"
             fill
-            // ref={imgRef}
-            // onLoad={() => {
-            //   const colorThief = new ColorThief();
-            //   const img = imgRef.current;
-            //   const color = colorThief.getColor(img);
-            //   const colorObj = {
-            //     r: color[0],
-            //     g: color[1],
-            //     b: color[2],
-            //   };
-            //   console.log(color);
-            //   setImageColorData(colorObj);
-            // }}
             // TODO: set these sizes for performance
             // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            src={imageDataUrl ?? image.src}
+            src={state.quiz.meta.image}
           />
         </div>
       </motion.div>
@@ -148,68 +97,49 @@ const QuizHeader = ({
           restDelta: 1,
         }}
         layout="position"
-        className="px-6 sticky top-0 z-50"
+        className="sticky top-0 z-50"
       >
-        <div className=" p-3 flex gap-2 mx-auto max-w-6xl rounded-b-xl items-center  w-full justify-between  bg-[#242a32] px-6">
-          <div className="flex items-center gap-2">
-            <Link href={`/lobby?id=${id}`}>
-              <Button
-                // size="lg"
-                variant="sky"
-                className=" flex gap-1 items-center px-12"
-              >
-                <svg
-                  className="h-[.65rem] w-[.65rem] text-white"
-                  viewBox="0 0 448 512"
-                >
-                  <path
-                    fill="currentColor"
-                    d="m424.4 214.7-352-208.1c-28.6-16.9-72.4-.5-72.4 41.3v416.1c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6z"
-                  />
-                </svg>
-                {/* <span className="p-0.5 rounded-full bg-sky-300/30 mr-1">
-                <ChevronRight className="h-3 w-3" />
-              </span> */}
-                Play
-              </Button>
-            </Link>
+        <div className=" p-3 flex gap-2 mx-auto max-w-6xl rounded-b-xl items-center  w-full justify-between  bg-[#242a32]">
+          {/* <Link href={`/quiz/${state.quiz.id}?play`}> */}
+          <Button
+            onClick={handleCreateLobby}
+            // size="sm"
+            variant="action"
+            className="gap-1 px-12"
+          >
+            <IconPlayerPlayFilled className="h-4 w-4" />
+            Play
+          </Button>
+          {/* </Link> */}
+          <div className="flex items-center  gap-1.5">
             {isEditing ? (
-              <form action={onSaveQuiz}>
-                <SaveButton />
-              </form>
+              <SaveQuizForm onSave={handleSaveQuestions} />
             ) : (
               <Button
-                // size="lg"
-                className=""
-                onClick={() => setIsEditing(!isEditing)}
-                variant="violet"
+                // size="sm"
+                className="gap-1"
+                onClick={() => router.push(`/quiz/${state.quiz.id}?edit`)}
+                variant="outline"
               >
-                <span className="mr-1">
-                  <PencilLine className="h-4 w-4" />
-                  {/* <PlusIcon className="h-3 w-3" /> */}
-                </span>
-                Edit
+                <IconEdit className="h-4 w-4 text-violet-500" /> Edit
               </Button>
             )}
-            <DeleteDialog id={id} />
+            <QuizSettingsDialog {...state.quiz.meta} />
+            <DeleteQuizDialog id={state.quiz.id} />
           </div>
         </div>
       </motion.div>
     </>
   );
-};
+}
 
-export { QuizHeader, DeleteDialog };
-
-function DeleteDialog({ id }) {
-  const [open, setOpen] = React.useState(false);
+function DeleteQuizDialog({ id }: { id: string }) {
+  const [open, setOpen] = useState(false);
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button className="flex gap-1" variant="destructive">
-          <span className="">
-            <Trash className="h-4 w-4" />
-          </span>
+        <Button className="gap-1" variant="outline">
+          <IconTrash className="h-4 w-4 text-red-500" />
           Delete
         </Button>
       </AlertDialogTrigger>
@@ -227,10 +157,273 @@ function DeleteDialog({ id }) {
               await deleteQuiz(id).then(() => setOpen(false));
             }}
           >
-            <Button type="submit">Continue</Button>
+            <Button variant="destructive" type="submit">
+              Continue
+            </Button>
           </form>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+const FormSchema = QuizMetaSchema;
+
+import { z } from "zod";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { v4 as uuidv4 } from "uuid";
+import { Quiz, QuizMeta, QuizMetaSchema } from "@/lib/types";
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormField,
+  Form,
+  FormMessage,
+} from "../ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { set } from "lodash";
+import { Toaster } from "../ui/sonner";
+import { useLobbyContext } from "../providers/lobby-provider";
+import { toast } from "sonner";
+
+export function QuizSettingsDialog(meta: QuizMeta) {
+  const { handleSaveMeta } = useQuizContext();
+  const [open, setOpen] = useState(false);
+  const hiddenFileInput = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    hiddenFileInput.current && hiddenFileInput.current.click();
+  };
+
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<File | null>(null);
+  const form = useForm({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      image: meta.image,
+      title: meta.title,
+      visibility: meta.visibility,
+      category: meta.category,
+    },
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageData(file);
+    // dispatch({ type: "SET_IMAGE_DATA", payload: file });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (!e.target) return;
+      setImagePreview(e.target.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const categories = [
+    "Science",
+    "History",
+    "Culture",
+    "Sports",
+    "Geography",
+    "Music",
+    "Technology",
+    "Nature",
+    "Entertainment",
+    "Food",
+  ];
+
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    console.log(data);
+    await handleSaveMeta(data, imageData);
+    setOpen(false);
+  }
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-1" variant="outline">
+          <IconSettings className="h-4 w-4 text-yellow-500" /> Settings
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className=" gap-6 sm:max-w-3xl"
+      >
+        <DialogHeader>
+          <DialogTitle>Quiz settings</DialogTitle>
+          <DialogDescription>
+            Make changes to your quiz here. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="grid grid-cols-2 gap-4"
+          >
+            <div className="flex flex-col h-full justify-between">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    {/* <FormDescription>
+                    This is your public display name.
+                  </FormDescription> */}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {categories.map((category) => (
+                              <SelectItem
+                                key={category}
+                                value={category.toLowerCase()}
+                              >
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    {/* <FormDescription>
+                    This is your public display name.
+                  </FormDescription> */}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="visibility"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Visibility</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="public">Public</SelectItem>
+                            <SelectItem value="private">Private</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    {/* <FormDescription>
+                    This is your public display name.
+                  </FormDescription> */}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="h-full  w-full flex flex-col gap-1.5 ">
+              <img
+                className="rounded-[var(--radius)] aspect-[16/9] w-full object-cover"
+                src={imagePreview ?? meta.image}
+                alt="preview"
+              />
+              <Controller
+                name="image"
+                control={form.control}
+                render={({ field: { ref, name, onBlur, onChange } }) => (
+                  <div className="">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={handleClick}
+                      className="gap-1"
+                    >
+                      <IconPhotoUp className="h-4 w-4 text-yellow-500 " />
+                      Upload
+                    </Button>
+
+                    <input
+                      ref={hiddenFileInput}
+                      className="hidden"
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      type="file"
+                      id="file"
+                      name="file"
+                    />
+                  </div>
+                )}
+              />
+            </div>
+            <DialogFooter className="col-span-2">
+              <Button variant="action" type="submit">
+                {form.formState.isSubmitting ? (
+                  <span className="flex items-center gap-0.5">
+                    <motion.span layout className="loader h-3 w-3 mr-0.5 " />
+                    Saving
+                  </span>
+                ) : (
+                  "Save changes"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function SaveQuizButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button variant="outline" className="gap-1">
+      {pending ? (
+        <motion.span layout className="loader h-3 w-3 mr-0.5 " />
+      ) : (
+        <IconDeviceFloppy className="h-4 w-4 text-violet-500" />
+      )}
+      {pending ? "Saving" : "Save"}{" "}
+    </Button>
+  );
+}
+
+export function SaveQuizForm({ onSave }: { onSave: () => void }) {
+  return (
+    <form action={onSave}>
+      <SaveQuizButton />
+    </form>
   );
 }

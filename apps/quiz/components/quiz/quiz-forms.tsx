@@ -2,9 +2,9 @@
 
 import { createQuiz } from "@/actions/quiz";
 import { Button } from "../ui/button";
-import { PushButton } from "../ui/custom-button";
-import { ChevronRight, PencilLine, PlusIcon } from "lucide-react";
-import { redirect, useRouter } from "next/navigation";
+import { PlusIcon, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 const sample = {
   meta: {
     title: "Video Game Trivia & History",
@@ -12,16 +12,7 @@ const sample = {
       "Video Game History and fun Trivia for all ages to learn more about the video game industry and to test their knowledge on games, gaming consoles, companies, and developers.",
     category: "Technology",
     public: true,
-    image: {
-      src: "/preview.jpg",
-      meta: {
-        color: {
-          r: 166,
-          g: 188,
-          b: 221,
-        },
-      },
-    },
+    image: "/preview.jpg",
   },
   questions: [
     {
@@ -52,27 +43,24 @@ const sample = {
     },
   ],
 };
-export const QuizForm = () => {
+export function CreateQuizForm() {
   const router = useRouter();
   const handleCreateQuiz = async () => {
     const res = await createQuiz(sample);
-    console.log(res);
-    router.push(`/quiz/${res.id}`)
+    if ("error" in res) {
+      toast.error(res.error);
+      return;
+    }
+
+    router.push(`/quiz/${res.id}`);
   };
   return (
     <form action={handleCreateQuiz}>
-      <Button
-        variant="violet"
-        // size="lg"
-        className=" flex gap-0.5"
-        type="submit"
-      >
-        {/* <span className="p-0.5 rounded-full bg-violet-300/30 mr-1"> */}
-          {/* <ChevronRight className="h-3 w-3" /> */}
-          <PlusIcon className="h-4 w-4" />
-        {/* </span> */}
+      <Button size="sm" variant="violet" className=" flex gap-0.5" type="submit">
+        <PlusIcon className="h-4 w-4" />
         New Quiz
       </Button>
     </form>
   );
-};
+}
+

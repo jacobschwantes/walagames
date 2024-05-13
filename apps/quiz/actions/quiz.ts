@@ -44,25 +44,21 @@ export const createQuiz = async (
 
   try {
     const userid = await getUserID();
-    const response = await fetch(
-      `${process.env.API_ENDPOINT}/quiz`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${process.env.API_KEY}`,
-          "X-User-ID": userid
-        },
-        body: JSON.stringify({
-          ...quiz.data,
-        }),
-      }
-    );
+    const response = await fetch(`${process.env.API_ENDPOINT}/quiz`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${process.env.API_KEY}`,
+        "X-User-ID": userid,
+      },
+      body: JSON.stringify({
+        ...quiz.data,
+      }),
+    });
 
     const data = await response.json();
     console.log("createQuiz", data);
 
-    revalidatePath("/library");
     return data;
     // if (!response.ok) {
     //   throw new Error(data.error || "Unknown error");
@@ -87,17 +83,14 @@ export const fetchQuizById = async (
 ): Promise<Quiz | ErrorResponse> => {
   try {
     const userid = await getUserID();
-    const response = await fetch(
-      `${process.env.API_ENDPOINT}/quiz/${id}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${process.env.API_KEY}`,
-          "X-User-ID": userid
-        },
-      }
-    );
+    const response = await fetch(`${process.env.API_ENDPOINT}/quiz/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${process.env.API_KEY}`,
+        "X-User-ID": userid,
+      },
+    });
     if (!response.ok) {
       throw new Error((await response.text()) || "Unknown error");
     }
@@ -126,17 +119,14 @@ export const fetchQuizMany = async (
 ): Promise<FetchQuizManyResponse | ErrorResponse> => {
   try {
     const userid = await getUserID();
-    const response = await fetch(
-      `${process.env.API_ENDPOINT}/quizzes`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${process.env.API_KEY}`,
-          "X-User-ID": userid
-        },
-      }
-    );
+    const response = await fetch(`${process.env.API_ENDPOINT}/quizzes`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${process.env.API_KEY}`,
+        "X-User-ID": userid,
+      },
+    });
     const result = await response.json();
     if (!response.ok) {
       throw new Error(result.error || "Unknown error");
@@ -178,26 +168,23 @@ export const updateQuiz = async (
 
   try {
     const userid = await getUserID();
-    const response = await fetch(
-      `${process.env.API_ENDPOINT}/quiz/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${process.env.API_KEY}`,
-          "X-User-ID": userid
-        },
-        body: JSON.stringify({
-          ...quiz.data,
-        }),
-      }
-    );
-    revalidatePath(`/library/quiz/${id}`);
-    const data = await response.json();
+    const response = await fetch(`${process.env.API_ENDPOINT}/quiz/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${process.env.API_KEY}`,
+        "X-User-ID": userid,
+      },
+      body: JSON.stringify({
+        ...quiz.data,
+      }),
+    });
     if (!response.ok) {
-      throw new Error(data.error || "Unknown error");
+      throw new Error((await response.text()) || "Unknown error");
     }
 
+    const data = await response.json();
+    revalidatePath(`/quiz/${id}`);
     return data;
   } catch (error) {
     return {
@@ -215,20 +202,21 @@ export const updateQuiz = async (
  */
 export const deleteQuiz = async (id: string): Promise<Quiz | ErrorResponse> => {
   try {
-    console.log("deleting quiz with id:", id)
+    console.log("deleting quiz with id:", id);
     const userid = await getUserID();
-    const response = await fetch(`${process.env.API_ENDPOINT}/quiz?id=${id}&user_id=${userid}`, {
+    const response = await fetch(`${process.env.API_ENDPOINT}/quiz/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.API_KEY}`,
+        Authorization: `${process.env.API_KEY}`,
+        "X-User-ID": userid,
       },
     });
     const data = await response.text();
     if (!response.ok) {
       throw new Error(data || "Unknown error");
     }
-    revalidatePath("/library");
+    // revalidatePath("/library");
     revalidatePath(`/quiz/${id}`);
     return data;
   } catch (error) {

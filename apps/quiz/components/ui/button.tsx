@@ -17,15 +17,20 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        violet: "bg-violet-600 shadow-xl shadow-violet-700/20 inner-shadow",
+        violet:
+          "bg-violet-600 inner-shadow border border-violet-500/80 hover:bg-violet-500",
         sky: "bg-sky-500 shadow-xl shadow-sky-600/20 inner-shadow",
+        action:
+          "bg-blue-600 inner-shadow border border-blue-500/80 hover:bg-blue-500",
+        actionHover:
+          "border-2 border-accent bg-background hover:bg-blue-600 hover:inner-shadow hover:border-blue-600",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-5",
-        icon: "h-10 w-10",
-        iconLg: "h-11 w-11",
+        icon: "h-8 w-8 !rounded-lg",
+        iconLg: "h-11 w-11 !rounded-lg",
       },
     },
     defaultVariants: {
